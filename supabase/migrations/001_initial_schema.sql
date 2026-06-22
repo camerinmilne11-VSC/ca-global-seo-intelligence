@@ -32,6 +32,9 @@ create table clusters (
   created_at      timestamptz not null default now()
 );
 
+alter table clusters add constraint clusters_brand_primary_keyword_unique
+  unique (brand_id, primary_keyword);
+
 -- Core keyword intelligence
 create table keywords (
   id                    uuid primary key default uuid_generate_v4(),

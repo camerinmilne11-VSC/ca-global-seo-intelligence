@@ -34,7 +34,7 @@ begin
     'Core service pillar covering executive search, headhunting, and C-suite placement. Targets decision-makers seeking senior talent globally and in Africa.',
     'executive search africa'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_1;
 
   if v_cluster_1 is null then
@@ -50,7 +50,7 @@ begin
     'Targets buyers comparing executive recruitment providers. High commercial intent. Positions CA Global against Korn Ferry, Robert Walters, and other global players.',
     'executive recruitment agencies'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_2;
 
   if v_cluster_2 is null then
@@ -66,7 +66,7 @@ begin
     'Mid-funnel informational content for professionals seeking work in Africa. CA Global ranks for several terms here already in both ZA and US databases. Supports brand discovery.',
     'jobs in africa'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_3;
 
   if v_cluster_3 is null then
@@ -82,7 +82,7 @@ begin
     'Sector-specific executive recruitment content: mining, finance/CFO, engineering, legal, and C-suite. CA Mining and CA Finance sub-brands support these pages. Mining jobs in Africa strong in ZA database.',
     'mining recruitment'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_4;
 
   if v_cluster_4 is null then
@@ -98,7 +98,7 @@ begin
     'Comparison and listicle content targeting buyers researching the best executive search firms. High CPC signals strong commercial intent. Competitor gap opportunity.',
     'top executive search firms'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_5;
 
   if v_cluster_5 is null then
@@ -115,7 +115,7 @@ begin
     'Geo-targeted South Africa pillar discovered via ZA database research. Terms like "recruitment agency south africa" (1,300 vol ZA) and "executive recruitment south africa" (90 vol) signal local search intent CA Global can capture.',
     'recruitment agency south africa'
   )
-  on conflict do nothing
+  on conflict (brand_id, primary_keyword) do nothing
   returning id into v_cluster_6;
 
   if v_cluster_6 is null then
