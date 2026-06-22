@@ -19,7 +19,7 @@ export function getActiveBrand(pathname: string): BrandSlug | undefined {
 }
 
 /** Returns the keywords page href for a given brand slug. */
-export function getBrandHref(slug: string): string {
+export function getBrandHref(slug: BrandSlug): string {
   return `/${slug}/keywords`
 }
 
@@ -47,6 +47,9 @@ export function parseSyncResponse(
   json: Record<string, unknown>,
   ok: boolean,
 ): string {
-  if (ok) return `Synced ${json.synced} keywords`
-  return `Error: ${json.error}`
+  if (ok) {
+    const count = typeof json.synced === 'number' ? json.synced : 0
+    return `Synced ${count} keywords`
+  }
+  return `Error: ${typeof json.error === 'string' ? json.error : 'Unknown error'}`
 }
