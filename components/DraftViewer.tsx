@@ -7,6 +7,13 @@ type Props = { draft: Draft }
 export function DraftViewer({ draft }: Props) {
   return (
     <div className="space-y-6 text-sm">
+      {draft.proposed_title && (
+        <div className="mb-3">
+          <span className="text-xs font-medium text-brand-neutral-dark uppercase tracking-wide">Proposed Title</span>
+          <p className="text-lg font-semibold text-gray-900 mt-1">{draft.proposed_title}</p>
+        </div>
+      )}
+
       <div className="bg-brand-teal text-white rounded-lg p-4 space-y-1">
         <p className="text-xs font-medium uppercase tracking-wide text-brand-teal-faint">SEO Title</p>
         <p className="font-semibold">{draft.seo_title}</p>
