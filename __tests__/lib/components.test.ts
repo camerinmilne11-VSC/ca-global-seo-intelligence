@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { getScoreColor, BRANDS, getActiveBrand, getBrandHref, buildSyncUrl, parseSyncResponse } from '@/lib/component-utils'
+import {
+  getScoreColor, BRANDS, getActiveBrand, getBrandHref, buildSyncUrl, parseSyncResponse,
+  getStatusColor, getIntentLabel, formatStatusLabel,
+  filterKeywords, sortKeywords,
+} from '@/lib/component-utils'
+import type { KeywordWithRelations, ContentStatus } from '@/types'
 
 // ─── OpportunityScore colour logic ────────────────────────────────────────────────
 
@@ -84,5 +89,137 @@ describe('SyncButton logic', () => {
 
   it('formats error message on failure', () => {
     expect(parseSyncResponse({ error: 'Rate limited' }, false)).toBe('Error: Rate limited')
+  })
+})
+
+// ─── KeywordRow helpers ────────────────────────────────────────────────────────
+
+describe('getStatusColor', () => {
+  it('returns blue classes for opportunity', () => {
+    expect(getStatusColor('opportunity')).toContain('text-blue-700')
+  })
+  it('returns yellow classes for in_progress', () => {
+    expect(getStatusColor('in_progress')).toContain('text-yellow-700')
+  })
+  it('returns green classes for published', () => {
+    expect(getStatusColor('published')).toContain('text-green-700')
+  })
+  it('returns gray classes for paused', () => {
+    expect(getStatusColor('paused')).toContain('text-gray-500')
+  })
+})
+
+describe('getIntentLabel', () => {
+  it('maps I to Informational', () => expect(getIntentLabel('I')).toBe('Informational'))
+  it('maps N to Navigational',  () => expect(getIntentLabel('N')).toBe('Navigational'))
+  it('maps C to Commercial',    () => expect(getIntentLabel('C')).toBe('Commercial'))
+  it('maps T to Transactional', () => expect(getIntentLabel('T')).toBe('Transactional'))
+  it('returns the raw value for unknown intents', () => expect(getIntentLabel('X')).toBe('X'))
+})
+
+describe('formatStatusLabel', () => {
+  it('replaces underscore with space in in_progress', () => {
+    expect(formatStatusLabel('in_progress')).toBe('in progress')
+  })
+  it('leaves single-word statuses unchanged', () => {
+    expect(formatStatusLabel('opportunity')).toBe('opportunity')
+    expect(formatStatusLabel('published')).toBe('published')
+    expect(formatStatusLabel('paused')).toBe('paused')
+  })
+})
+
+// ─── KeywordTable helpers ──────────────────────────────────────────────────────
+
+function makeKw(overrides: Partial<KeywordWithRelations> = {}): KeywordWithRelations {
+  return {
+    id: '1',
+    brand_id: 'b1',
+    keyword: 'mining jobs',
+    cluster_id: null,
+    volume: 1000,
+    difficulty: 40,
+    search_intent: 'I',
+    opportunity_rationale: '',
+    priority_score: 75,
+    content_status: 'opportunity',
+    publication_url: null,
+    last_synced: '',
+    created_at: '',
+    brief: null,
+    draft: null,
+    ...overrides,
+  }
+}
+
+describe('filterKeywords', () => {
+  const kws: KeywordWithRelations[] = [
+    makeKw({ id: '1', keyword: 'mining jobs',      content_status: 'opportunity' }),
+    makeKw({ id: '2', keyword: 'finance careers',  content_status: 'published'   }),
+    makeKw({ id: '3', keyword: 'mining engineer',  content_status: 'in_progress' }),
+  ]
+
+  it('returns all when search is empty and status is all', () => {
+    expect(filterKeywords(kws, '', 'all')).toHaveLength(3)
+  })
+
+  it('filters by search term (case-insensitive)', () => {
+    const result = filterKeywords(kws, 'Mining', 'all')
+    expect(result).toHaveLength(2)
+    expect(result.map(k => k.id)).toEqual(['1', '3'])
+  })
+
+  it('filters by status', () => {
+    const result = filterKeywords(kws, '', 'published')
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('2')
+  })
+
+  it('combines search and status filters', () => {
+    const result = filterKeywords(kws, 'mining', 'opportunity')
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('1')
+  })
+
+  it('returns empty array when nothing matches', () => {
+    expect(filterKeywords(kws, 'zzz', 'all')).toHaveLength(0)
+  })
+})
+
+describe('sortKeywords', () => {
+  const kws: KeywordWithRelations[] = [
+    makeKw({ id: '1', keyword: 'banana', priority_score: 60, volume: 500,  difficulty: 30 }),
+    makeKw({ id: '2', keyword: 'apple',  priority_score: 90, volume: 200,  difficulty: 70 }),
+    makeKw({ id: '3', keyword: 'cherry', priority_score: 40, volume: 1000, difficulty: 50 }),
+  ]
+
+  it('sorts by priority_score descending', () => {
+    const r = sortKeywords(kws, 'priority_score', 'desc')
+    expect(r.map(k => k.id)).toEqual(['2', '1', '3'])
+  })
+
+  it('sorts by priority_score ascending', () => {
+    const r = sortKeywords(kws, 'priority_score', 'asc')
+    expect(r.map(k => k.id)).toEqual(['3', '1', '2'])
+  })
+
+  it('sorts by volume descending', () => {
+    const r = sortKeywords(kws, 'volume', 'desc')
+    expect(r.map(k => k.id)).toEqual(['3', '1', '2'])
+  })
+
+  it('sorts by keyword ascending (alphabetical)', () => {
+    const r = sortKeywords(kws, 'keyword', 'asc')
+    expect(r.map(k => k.id)).toEqual(['2', '1', '3'])
+  })
+
+  it('sorts by keyword descending', () => {
+    const r = sortKeywords(kws, 'keyword', 'desc')
+    expect(r.map(k => k.id)).toEqual(['3', '1', '2'])
+  })
+
+  it('does not mutate the original array', () => {
+    const original = [...kws]
+    sortKeywords(kws, 'volume', 'desc')
+    expect(kws.map(k => k.id)).toEqual(original.map(k => k.id))
   })
 })
