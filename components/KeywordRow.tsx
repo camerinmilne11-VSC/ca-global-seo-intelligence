@@ -16,36 +16,61 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
   const [briefLoading, setBriefLoading] = useState(false)
   const [draftLoading, setDraftLoading] = useState(false)
   const [status, setStatus]             = useState<ContentStatus>(keyword.content_status)
+  const [actionError, setActionError]   = useState<string | null>(null)
 
   async function generateBrief() {
     setBriefLoading(true)
-    await fetch('/api/ai/brief', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywordId: keyword.id }),
-    })
-    setBriefLoading(false)
-    onBriefGenerated?.()
+    setActionError(null)
+    try {
+      const res = await fetch('/api/ai/brief', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId: keyword.id }),
+      })
+      if (!res.ok) throw new Error('Brief generation failed')
+      const data = await res.json()
+      onBriefGenerated?.(data)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Brief generation failed')
+    } finally {
+      setBriefLoading(false)
+    }
   }
 
   async function generateDraft() {
     setDraftLoading(true)
-    await fetch('/api/ai/draft', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywordId: keyword.id }),
-    })
-    setDraftLoading(false)
-    onDraftGenerated?.()
+    setActionError(null)
+    try {
+      const res = await fetch('/api/ai/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId: keyword.id }),
+      })
+      if (!res.ok) throw new Error('Draft generation failed')
+      const data = await res.json()
+      onDraftGenerated?.(data)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Draft generation failed')
+    } finally {
+      setDraftLoading(false)
+    }
   }
 
   async function updateStatus(newStatus: ContentStatus) {
+    const previousStatus = status
     setStatus(newStatus)
-    await fetch('/api/keywords/status', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywordId: keyword.id, status: newStatus }),
-    })
+    try {
+      const res = await fetch('/api/keywords/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId: keyword.id, status: newStatus }),
+      })
+      if (!res.ok) {
+        setStatus(previousStatus)
+      }
+    } catch {
+      setStatus(previousStatus)
+    }
   }
 
   return (
@@ -107,6 +132,9 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
             </Button>
           )}
         </div>
+        {actionError && (
+          <span className="text-red-500 text-xs mt-1">{actionError}</span>
+        )}
       </td>
     </tr>
   )
