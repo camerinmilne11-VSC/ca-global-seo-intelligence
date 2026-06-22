@@ -1,7 +1,8 @@
 -- =============================================================================
 -- Seed: seed-ca-global.sql
 -- Project: SEO Content Intelligence System — CA Global
--- Source:  SEMrush Phase 1 research (June 2026)
+-- Source:  SEMrush Phase 2 research (June 2026)
+--          Databases: za (South Africa), uk (Africa-focus), us (global)
 -- =============================================================================
 -- HOW TO APPLY:
 --   1. Ensure 001_initial_schema.sql and seed.sql have already been run.
@@ -20,6 +21,7 @@ declare
   v_cluster_3  uuid;
   v_cluster_4  uuid;
   v_cluster_5  uuid;
+  v_cluster_6  uuid;
 begin
 
   select id into v_brand_id from brands where slug = 'ca-global';
@@ -61,7 +63,7 @@ begin
   values (
     v_brand_id,
     'Africa Jobs & Employment',
-    'Mid-funnel informational content for professionals seeking work in Africa. CA Global ranks for several terms here already. Supports brand discovery.',
+    'Mid-funnel informational content for professionals seeking work in Africa. CA Global ranks for several terms here already in both ZA and US databases. Supports brand discovery.',
     'jobs in africa'
   )
   on conflict do nothing
@@ -77,7 +79,7 @@ begin
   values (
     v_brand_id,
     'Sector Specialist Recruitment',
-    'Sector-specific executive recruitment content: mining, finance/CFO, engineering, legal, and C-suite. CA Mining and CA Finance sub-brands support these pages.',
+    'Sector-specific executive recruitment content: mining, finance/CFO, engineering, legal, and C-suite. CA Mining and CA Finance sub-brands support these pages. Mining jobs in Africa strong in ZA database.',
     'mining recruitment'
   )
   on conflict do nothing
@@ -104,56 +106,78 @@ begin
     where brand_id = v_brand_id and primary_keyword = 'top executive search firms';
   end if;
 
+  -- Pillar 6: South Africa Executive Recruitment (ZA-database geo-targeted)
+  -- NEW pillar from ZA database research — terms not previously tracked
+  insert into clusters (brand_id, pillar_name, description, primary_keyword)
+  values (
+    v_brand_id,
+    'South Africa Executive Recruitment',
+    'Geo-targeted South Africa pillar discovered via ZA database research. Terms like "recruitment agency south africa" (1,300 vol ZA) and "executive recruitment south africa" (90 vol) signal local search intent CA Global can capture.',
+    'recruitment agency south africa'
+  )
+  on conflict do nothing
+  returning id into v_cluster_6;
+
+  if v_cluster_6 is null then
+    select id into v_cluster_6 from clusters
+    where brand_id = v_brand_id and primary_keyword = 'recruitment agency south africa';
+  end if;
+
   -- ─── Keyword inserts ───────────────────────────────────────────────────────
   -- Scoring methodology (from lib/semrush.ts):
   --   volume 25% | ease (100-kd) 20% | commercial 15% | recruitment_match 15%
   --   geo_match 10% | dual_audience 10% | content_gap 5%
-  -- KD estimated from competition proxy (0-100 normalised) where SEMrush
-  -- phrase_this does not return Td column — conservative 40 used as default.
+  -- KD estimated from Co (competition density) field: Co*100 used as proxy.
+  -- Database source noted per keyword.
 
   -- ── PILLAR 1: Executive Search & Headhunting ──────────────────────────────
 
   insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
                         priority_score, opportunity_rationale, content_status)
   values
-  -- executive headhunting firms — 5400 vol, CPC $4.76, comp 0.14
+  -- executive headhunting firms — US: 5400 vol, CPC $4.76, comp 0.14
   (v_brand_id, v_cluster_1, 'executive headhunting firms', 5400, 40, 'C',
-   82, '5,400 monthly searches · low-mid competition (KD ~40) · CPC $4.76 commercial value · CA Global = headhunting specialist · competitor gap vs Korn Ferry',
+   82, '5,400 monthly searches (US) · low-mid competition (KD ~40) · CPC $4.76 commercial value · CA Global = headhunting specialist · competitor gap vs Korn Ferry',
    'opportunity'),
 
-  -- executive search firms — 5400 vol, CPC $4.76, comp 0.14
+  -- executive search firms — US: 5400 vol, CPC $4.76, comp 0.14
   (v_brand_id, v_cluster_1, 'executive search firms', 5400, 40, 'C',
-   82, '5,400 monthly searches · low-mid competition · CPC $4.76 · core service term · competitor gap',
+   82, '5,400 monthly searches (US) · low-mid competition · CPC $4.76 · core service term · competitor gap',
    'opportunity'),
 
-  -- executive headhunters — 1300 vol, CPC $3.90, comp 0.76 (high)
+  -- executive headhunters — US: 1300 vol, CPC $3.90, comp 0.76 (high)
   (v_brand_id, v_cluster_1, 'executive headhunters', 1300, 70, 'C',
-   66, '1,300 monthly searches · CPC $3.90 commercial value · high competition (KD ~70) · CA Global core identity',
+   66, '1,300 monthly searches (US) · CPC $3.90 commercial value · high competition (KD ~70) · CA Global core identity',
    'opportunity'),
 
-  -- executive search africa — 40 vol, CPC $0, trending seasonal
-  (v_brand_id, v_cluster_1, 'executive search africa', 40, 20, 'C',
-   71, 'Low volume but geo-targeted · low competition · perfect brand-market fit for CA Global · trending upward in H1/H2',
+  -- executive search africa — UK: 30 vol, CPC $2.76, comp 0.67 | ZA: 20 vol, comp 0.21
+  (v_brand_id, v_cluster_1, 'executive search africa', 30, 21, 'C',
+   73, 'UK db: 30 vol, CPC $2.76, comp 0.67 · ZA db: 20 vol, comp 0.21 (lower competition in SA market) · trending spike to 1.0 in ZA · perfect brand-market fit · geo-targeted anchor term',
    'opportunity'),
 
-  -- executive recruitment africa — 20 vol, CPC $7.43, comp 0.21
-  (v_brand_id, v_cluster_1, 'executive recruitment africa', 20, 25, 'C',
-   72, 'Low volume but CPC $7.43 signals very high buyer intent · geo match · CA Global core service · quick win opportunity',
+  -- executive recruitment africa — UK: 30 vol, CPC $2.76, comp 0.67
+  (v_brand_id, v_cluster_1, 'executive recruitment africa', 30, 25, 'C',
+   74, 'UK db: 30 vol, CPC $2.76 — confirms real buyer intent · comp 0.67 but low absolute volume = addressable niche · CA Global core service · trending seasonal spike',
    'opportunity'),
 
-  -- executive search south africa — 20 vol, CPC $0, comp 0.33
-  (v_brand_id, v_cluster_1, 'executive search south africa', 20, 25, 'I',
-   62, 'Geo-targeted long-tail · South Africa is primary CA Global market · low competition · foundation content',
+  -- executive search south africa — ZA: 90 vol, CPC $0.58, comp 0.37
+  (v_brand_id, v_cluster_1, 'executive search south africa', 90, 37, 'C',
+   68, 'ZA db: 90 vol (4.5x more than US estimate) · CPC $0.58 · comp 0.37 · geo-targeted high-value term · consistent 12-month trends in ZA market',
    'opportunity'),
 
-  -- headhunting firms — 260 vol, CPC $4.69, comp 0.41
+  -- headhunting firms — US: 260 vol, CPC $4.69, comp 0.41
   (v_brand_id, v_cluster_1, 'headhunting firms', 260, 45, 'C',
-   72, '260 monthly searches · CPC $4.69 · moderate competition · CA Global headhunting specialist brand fit',
+   72, '260 monthly searches (US) · CPC $4.69 · moderate competition · CA Global headhunting specialist brand fit',
    'opportunity'),
 
-  -- executive search and headhunting — 1900 vol, CPC $3.25, comp 0.27
+  -- executive search and headhunting — US: 1900 vol, CPC $3.25, comp 0.27
   (v_brand_id, v_cluster_1, 'executive search and headhunting', 1900, 35, 'C',
-   77, '1,900 monthly searches · CPC $3.25 · combines two core CA Global service lines · low-moderate competition',
+   77, '1,900 monthly searches (US) · CPC $3.25 · combines two core CA Global service lines · low-moderate competition',
+   'opportunity'),
+
+  -- headhunters south africa — ZA: 50 vol, CPC $0.66, comp 0.43
+  (v_brand_id, v_cluster_1, 'headhunters south africa', 50, 43, 'C',
+   64, 'ZA db: 50 vol, CPC $0.66 · comp 0.43 · ZA-specific term · confirms SA headhunting search demand · supports localisation strategy',
    'opportunity')
 
   on conflict (brand_id, keyword) do update
@@ -170,49 +194,49 @@ begin
   insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
                         priority_score, opportunity_rationale, content_status)
   values
-  -- executive recruitment agencies — 1900 vol, CPC $4.66, comp 0.23
+  -- executive recruitment agencies — US: 1900 vol, CPC $4.66, comp 0.23
   (v_brand_id, v_cluster_2, 'executive recruitment agencies', 1900, 35, 'C',
-   78, '1,900 monthly searches · CPC $4.66 · low-moderate competition · core category term · buyers comparing providers',
+   78, '1,900 monthly searches (US) · CPC $4.66 · low-moderate competition · core category term · buyers comparing providers',
    'opportunity'),
 
-  -- executive recruitment — 1900 vol, CPC $4.40, comp 0.45
+  -- executive recruitment — US: 1900 vol, CPC $4.40, comp 0.45
   (v_brand_id, v_cluster_2, 'executive recruitment', 1900, 45, 'C',
-   74, '1,900 monthly searches · CPC $4.40 · head-term for the category · CA Global primary service',
+   74, '1,900 monthly searches (US) · CPC $4.40 · head-term for the category · CA Global primary service',
    'opportunity'),
 
-  -- executive search agency — 1600 vol, CPC $5.14, comp 0.06 (very low!)
+  -- executive search agency — US: 1600 vol, CPC $5.14, comp 0.06 (very low!)
   (v_brand_id, v_cluster_2, 'executive search agency', 1600, 15, 'C',
-   85, '1,600 monthly searches · CPC $5.14 · VERY LOW competition (0.06) · highest priority quick win · agency framing',
+   85, '1,600 monthly searches (US) · CPC $5.14 · VERY LOW competition (0.06) · highest priority quick win · agency framing',
    'opportunity'),
 
-  -- executive recruiting firms — 2400 vol, CPC $4.76, comp 0.14
+  -- executive recruiting firms — US: 2400 vol, CPC $4.76, comp 0.14
   (v_brand_id, v_cluster_2, 'executive recruiting firms', 2400, 30, 'C',
-   82, '2,400 monthly searches · CPC $4.76 · low competition · buyers in decision phase · competitor gap vs Korn Ferry',
+   82, '2,400 monthly searches (US) · CPC $4.76 · low competition · buyers in decision phase · competitor gap vs Korn Ferry',
    'opportunity'),
 
-  -- executive recruiter — 2400 vol, CPC $4.40, comp 0.45
+  -- executive recruiter — US: 2400 vol, CPC $4.40, comp 0.45
   (v_brand_id, v_cluster_2, 'executive recruiter', 2400, 50, 'C',
-   75, '2,400 monthly searches · CPC $4.40 · moderate competition · foundational category term',
+   75, '2,400 monthly searches (US) · CPC $4.40 · moderate competition · foundational category term',
    'opportunity'),
 
-  -- recruiting companies — 1900 vol, CPC $5.18, comp 0.42
+  -- recruiting companies — US: 1900 vol, CPC $5.18, comp 0.42
   (v_brand_id, v_cluster_2, 'recruiting companies', 1900, 45, 'C',
-   72, '1,900 monthly searches · CPC $5.18 · moderate competition · broad but commercial',
+   72, '1,900 monthly searches (US) · CPC $5.18 · moderate competition · broad but commercial',
    'opportunity'),
 
-  -- recruitment agency africa — volume sporadic, CPC $0, comp 0.33
-  (v_brand_id, v_cluster_2, 'recruitment agency africa', 0, 20, 'C',
-   52, 'Low US volume but geo-targeted Africa term · growing trend signal · CA Global niche anchor term',
+  -- recruitment agency africa — ZA: 20 vol, CPC $0.19, comp 0.24 | UK: 0 vol
+  (v_brand_id, v_cluster_2, 'recruitment agency africa', 20, 24, 'C',
+   56, 'ZA db: 20 vol, CPC $0.19, comp 0.24 · trending in ZA market (peak 1.00) · UK db: no volume · anchor geo term for Africa agency positioning',
    'opportunity'),
 
-  -- executive employment agency — 1600 vol, CPC $4.66, comp 0.23
+  -- executive employment agency — US: 1600 vol, CPC $4.66, comp 0.23
   (v_brand_id, v_cluster_2, 'executive employment agency', 1600, 30, 'C',
-   78, '1,600 monthly searches · CPC $4.66 · low competition · agency framing resonates with buyers',
+   78, '1,600 monthly searches (US) · CPC $4.66 · low competition · agency framing resonates with buyers',
    'opportunity'),
 
-  -- executive hiring firms — 1600 vol, CPC $4.93, comp 0.21
+  -- executive hiring firms — US: 1600 vol, CPC $4.93, comp 0.21
   (v_brand_id, v_cluster_2, 'executive hiring firms', 1600, 25, 'C',
-   80, '1,600 monthly searches · CPC $4.93 · low competition · buyers in active hiring mode',
+   80, '1,600 monthly searches (US) · CPC $4.93 · low competition · buyers in active hiring mode',
    'opportunity')
 
   on conflict (brand_id, keyword) do update
@@ -229,42 +253,52 @@ begin
   insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
                         priority_score, opportunity_rationale, content_status)
   values
-  -- africa employment — 210 vol, CA Global ranks #4
+  -- africa employment — US: 210 vol, CA Global ranks #4 (US) / ZA organic present
   (v_brand_id, v_cluster_3, 'africa employment', 210, 20, 'I',
-   64, '210 monthly searches · CA Global currently ranks #4 · low competition · nurture + improve existing rank',
+   64, '210 monthly searches (US) · CA Global currently ranks #4 · low competition · nurture + improve existing rank',
    'opportunity'),
 
-  -- jobs in africa — 320 vol, CA Global ranks #5
-  (v_brand_id, v_cluster_3, 'jobs in africa', 320, 20, 'I',
-   64, '320 monthly searches · CA Global ranks #5 · existing ranking to defend and improve',
+  -- jobs in africa — ZA: 480 vol, CPC $0.17, comp 0.11 | US: 320 vol, CA Global #5
+  (v_brand_id, v_cluster_3, 'jobs in africa', 480, 11, 'I',
+   68, 'ZA db: 480 vol (50% more than US estimate), CPC $0.17, comp 0.11 · US: 320 vol, CA Global ranks #5 · ZA ranking also confirmed · priority to improve in both databases',
    'opportunity'),
 
-  -- vacancies in africa — 320 vol, CA Global ranks #5
+  -- vacancies in africa — US: 320 vol, CA Global ranks #5
   (v_brand_id, v_cluster_3, 'vacancies in africa', 320, 20, 'I',
-   63, '320 monthly searches · existing rank #5 · informational intent · audience discovery',
+   63, '320 monthly searches (US) · existing rank #5 · informational intent · audience discovery',
    'opportunity'),
 
-  -- job openings in africa — 320 vol, CA Global ranks #6
+  -- job openings in africa — US: 320 vol, CA Global ranks #6
   (v_brand_id, v_cluster_3, 'job openings in africa', 320, 20, 'I',
-   62, '320 monthly searches · existing rank #6 · improve to page 1 top 3',
+   62, '320 monthly searches (US) · existing rank #6 · improve to page 1 top 3',
    'opportunity'),
 
-  -- work opportunities in africa — 320 vol, CA Global ranks #5
+  -- work opportunities in africa — US: 320 vol, CA Global ranks #5
   (v_brand_id, v_cluster_3, 'work opportunities in africa', 320, 20, 'I',
-   62, '320 monthly searches · existing rank #5 · quick win to push to top 3',
+   62, '320 monthly searches (US) · existing rank #5 · quick win to push to top 3',
    'opportunity'),
 
-  -- job search africa — 140 vol, CA Global ranks #3
+  -- job search africa — US: 140 vol, CA Global ranks #3
   (v_brand_id, v_cluster_3, 'job search africa', 140, 15, 'I',
-   62, '140 monthly searches · CA Global ranks #3 · defend and convert',
+   62, '140 monthly searches (US) · CA Global ranks #3 · defend and convert',
    'opportunity'),
 
-  -- africa executive jobs — 20 vol, geo-targeted
+  -- africa executive jobs — US: 20 vol, geo-targeted
   (v_brand_id, v_cluster_3, 'africa executive jobs', 20, 10, 'C',
    61, 'Low volume but executive + Africa + jobs = perfect CA Global audience · very low competition',
    'opportunity'),
 
-  -- jobs in african union — 390 vol, CPC $0, ngo/public sector adjacent
+  -- africa recruitment — ZA: 260 vol, CPC $0.16, comp 0.03 | UK: 30 vol
+  (v_brand_id, v_cluster_3, 'africa recruitment', 260, 3, 'C',
+   71, 'ZA db: 260 vol, CPC $0.16, VERY LOW comp 0.03 · UK db: 30 vol, comp 0.07 · ZA trending upward (1.00 peak mid-year) · CA Global ranks for this in ZA organically · quick win',
+   'opportunity'),
+
+  -- expat jobs africa — ZA: 90 vol, CPC $0.21, comp 0.12
+  (v_brand_id, v_cluster_3, 'expat jobs africa', 90, 12, 'C',
+   66, 'ZA db: 90 vol, CPC $0.21, comp 0.12 · strong consistent trends in ZA (values 0.45-1.00) · expat audience = high-value executive candidate segment for CA Global',
+   'opportunity'),
+
+  -- jobs in african union — US: 390 vol, CPC $0, ngo/public sector adjacent
   (v_brand_id, v_cluster_3, 'jobs in african union', 390, 25, 'N',
    44, 'Navigational intent (AU jobs) — tangential traffic only · informational value limited',
    'opportunity')
@@ -283,37 +317,42 @@ begin
   insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
                         priority_score, opportunity_rationale, content_status)
   values
-  -- mining recruitment — 260 vol, CPC $0.79, comp 0.16
+  -- mining recruitment — US: 260 vol, CPC $0.79, comp 0.16
   (v_brand_id, v_cluster_4, 'mining recruitment', 260, 25, 'C',
-   69, '260 monthly searches · low competition · CA Mining sub-brand · sector authority content',
+   69, '260 monthly searches (US) · low competition · CA Mining sub-brand · sector authority content',
    'opportunity'),
 
-  -- cfo recruitment — 210 vol, CPC $12.34 (!), comp 0.16
+  -- mining jobs africa — ZA: 210 vol, CPC $0.07, comp 0.05
+  (v_brand_id, v_cluster_4, 'mining jobs africa', 210, 5, 'I',
+   72, 'ZA db: 210 vol, CPC $0.07, VERY LOW comp 0.05 · trending strongly upward in ZA (1.00 peak recent months) · CA Mining sub-brand exact match · expat mining audience · low-hanging fruit',
+   'opportunity'),
+
+  -- cfo recruitment — US: 210 vol, CPC $12.34 (!), comp 0.16
   (v_brand_id, v_cluster_4, 'cfo recruitment', 210, 20, 'C',
-   76, '210 monthly searches · CPC $12.34 extremely high commercial value · low competition · CA Finance vertical',
+   76, '210 monthly searches (US) · CPC $12.34 extremely high commercial value · low competition · CA Finance vertical',
    'opportunity'),
 
-  -- ceo recruitment — 210 vol, CPC $5.49, comp 0.47
+  -- ceo recruitment — US: 210 vol, CPC $5.49, comp 0.47
   (v_brand_id, v_cluster_4, 'ceo recruitment', 210, 45, 'C',
-   69, '210 monthly searches · CPC $5.49 · C-suite placement core service · moderate competition',
+   69, '210 monthly searches (US) · CPC $5.49 · C-suite placement core service · moderate competition',
    'opportunity'),
 
-  -- legal recruiter — 8100 vol, CPC $5.82, comp 0.31 (Korn Ferry ranking #2)
+  -- legal recruiter — US: 8100 vol, CPC $5.82, comp 0.31 (Korn Ferry ranking #2)
   (v_brand_id, v_cluster_4, 'legal recruiter', 8100, 50, 'C',
-   76, '8,100 monthly searches · CPC $5.82 · Korn Ferry ranks #2 · competitor gap opportunity · high volume legal vertical',
+   76, '8,100 monthly searches (US) · CPC $5.82 · Korn Ferry ranks #2 · competitor gap opportunity · high volume legal vertical',
    'opportunity'),
 
-  -- recruitment process outsourcing — 3600 vol, CPC $17.15 (!), Korn Ferry #1
+  -- recruitment process outsourcing — US: 3600 vol, CPC $17.15 (!), Korn Ferry #1
   (v_brand_id, v_cluster_4, 'recruitment process outsourcing', 3600, 60, 'C',
-   72, '3,600 monthly searches · CPC $17.15 extremely high · Korn Ferry #1 — significant competitor gap · RPO service angle',
+   72, '3,600 monthly searches (US) · CPC $17.15 extremely high · Korn Ferry #1 — significant competitor gap · RPO service angle',
    'opportunity'),
 
-  -- ca global finance recruitment africa — 50 vol, CA Global ranks #2 and #3
+  -- ca global finance recruitment africa — US: 50 vol, CA Global ranks #2 and #3
   (v_brand_id, v_cluster_4, 'ca global finance recruitment africa', 50, 10, 'N',
    58, 'Brand + service term · CA Global ranks #2 and #3 · defend brand SERP · CA Finance audience',
    'opportunity'),
 
-  -- ca mining — 140 vol, CA Global ranks #4
+  -- ca mining — US: 140 vol, CA Global ranks #4
   (v_brand_id, v_cluster_4, 'ca mining', 140, 15, 'N',
    54, 'Brand sub-domain term · CA Global ranks #4 · improve to top 3 · cross-brand visibility',
    'opportunity')
@@ -332,54 +371,54 @@ begin
   insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
                         priority_score, opportunity_rationale, content_status)
   values
-  -- executive recruiting search firms — 6600 vol, CPC $4.76, Korn Ferry #1
+  -- executive recruiting search firms — US: 6600 vol, CPC $4.76, Korn Ferry #1
   (v_brand_id, v_cluster_5, 'executive recruiting search firms', 6600, 45, 'C',
-   81, '6,600 monthly searches · CPC $4.76 · Korn Ferry #1 = gap opportunity · list/comparison content format',
+   81, '6,600 monthly searches (US) · CPC $4.76 · Korn Ferry #1 = gap opportunity · list/comparison content format',
    'opportunity'),
 
-  -- top executive search firms — 1900 vol, CPC $4.11, comp 0.30
+  -- top executive search firms — US: 1900 vol, CPC $4.11, comp 0.30
   (v_brand_id, v_cluster_5, 'top executive search firms', 1900, 40, 'C',
-   77, '1,900 monthly searches · CPC $4.11 · moderate competition · "best of" listicle opportunity',
+   77, '1,900 monthly searches (US) · CPC $4.11 · moderate competition · "best of" listicle opportunity',
    'opportunity'),
 
-  -- top executive recruiting firms — 880 vol, CPC $3.89, comp 0.56
+  -- top executive recruiting firms — US: 880 vol, CPC $3.89, comp 0.56
   (v_brand_id, v_cluster_5, 'top executive recruiting firms', 880, 55, 'C',
-   70, '880 monthly searches · CPC $3.89 · buyers in final selection · list content opportunity',
+   70, '880 monthly searches (US) · CPC $3.89 · buyers in final selection · list content opportunity',
    'opportunity'),
 
-  -- best executive search firms — 880 vol, CPC $3.89, comp 0.56
+  -- best executive search firms — US: 880 vol, CPC $3.89, comp 0.56
   (v_brand_id, v_cluster_5, 'best executive search firms', 880, 55, 'C',
-   70, '880 monthly searches · CPC $3.89 · comparison intent · decision-stage buyers',
+   70, '880 monthly searches (US) · CPC $3.89 · comparison intent · decision-stage buyers',
    'opportunity'),
 
-  -- executive search companies — 1600 vol, CPC $4.93, comp 0.21
+  -- executive search companies — US: 1600 vol, CPC $4.93, comp 0.21
   (v_brand_id, v_cluster_5, 'executive search companies', 1600, 25, 'C',
-   81, '1,600 monthly searches · CPC $4.93 · LOW competition (0.21) · high priority list page',
+   81, '1,600 monthly searches (US) · CPC $4.93 · LOW competition (0.21) · high priority list page',
    'opportunity'),
 
-  -- executive search consultants — 720 vol, CPC $3.60, comp 0.08 (very low!)
+  -- executive search consultants — US: 720 vol, CPC $3.60, comp 0.08 (very low!)
   (v_brand_id, v_cluster_5, 'executive search consultants', 720, 15, 'C',
-   81, '720 monthly searches · CPC $3.60 · VERY LOW competition (0.08) · consultant framing suits CA Global style',
+   81, '720 monthly searches (US) · CPC $3.60 · VERY LOW competition (0.08) · consultant framing suits CA Global style',
    'opportunity'),
 
-  -- top executive headhunters — 720 vol, CPC $4.53, comp 0.29
+  -- top executive headhunters — US: 720 vol, CPC $4.53, comp 0.29
   (v_brand_id, v_cluster_5, 'top executive headhunters', 720, 35, 'C',
-   76, '720 monthly searches · CPC $4.53 · moderate competition · list format · headhunting identity',
+   76, '720 monthly searches (US) · CPC $4.53 · moderate competition · list format · headhunting identity',
    'opportunity'),
 
-  -- best executive recruiters — 260 vol, CPC $3.67, comp 0.73 (high)
+  -- best executive recruiters — US: 260 vol, CPC $3.67, comp 0.73 (high)
   (v_brand_id, v_cluster_5, 'best executive recruiters', 260, 70, 'C',
-   62, '260 monthly searches · CPC $3.67 · high competition · lower priority but valid for comprehensive pillar coverage',
+   62, '260 monthly searches (US) · CPC $3.67 · high competition · lower priority but valid for comprehensive pillar coverage',
    'opportunity'),
 
-  -- head hunters near me — 2400 vol, CPC $2.19, comp 0.44
+  -- head hunters near me — US: 2400 vol, CPC $2.19, comp 0.44
   (v_brand_id, v_cluster_5, 'head hunters near me', 2400, 45, 'C',
-   73, '2,400 monthly searches · CPC $2.19 · location-intent buyers · FAQ + landing page opportunity',
+   73, '2,400 monthly searches (US) · CPC $2.19 · location-intent buyers · FAQ + landing page opportunity',
    'opportunity'),
 
-  -- recruit executives — 1600 vol, CPC $4.35, comp 0.26
+  -- recruit executives — US: 1600 vol, CPC $4.35, comp 0.26
   (v_brand_id, v_cluster_5, 'recruit executives', 1600, 30, 'C',
-   79, '1,600 monthly searches · CPC $4.35 · low-moderate competition · employer-side phrasing suits CA Global',
+   79, '1,600 monthly searches (US) · CPC $4.35 · low-moderate competition · employer-side phrasing suits CA Global',
    'opportunity')
 
   on conflict (brand_id, keyword) do update
@@ -391,8 +430,44 @@ begin
         opportunity_rationale = excluded.opportunity_rationale,
         last_synced          = now();
 
-  -- ─── Competitor gap record ─────────────────────────────────────────────────
-  -- michaelpage.co.za returned no US data; Korn Ferry is the primary gap signal
+  -- ── PILLAR 6: South Africa Executive Recruitment (NEW — from ZA database) ─
+
+  insert into keywords (brand_id, cluster_id, keyword, volume, difficulty, search_intent,
+                        priority_score, opportunity_rationale, content_status)
+  values
+  -- recruitment agency south africa — ZA: 1300 vol, CPC $0.25, comp 0.32
+  (v_brand_id, v_cluster_6, 'recruitment agency south africa', 1300, 32, 'C',
+   79, 'ZA db: 1,300 vol — HIGHEST volume ZA keyword found · CPC $0.25 · comp 0.32 (moderate) · consistent 12-month trends · primary SA market term · CA Global not ranking — clear gap',
+   'opportunity'),
+
+  -- executive recruitment south africa — ZA: 90 vol, CPC $0.58, comp 0.37
+  (v_brand_id, v_cluster_6, 'executive recruitment south africa', 90, 37, 'C',
+   69, 'ZA db: 90 vol, CPC $0.58, comp 0.37 · exact match for CA Global service + location · consistent trend signal · strong geo-commercial intent',
+   'opportunity'),
+
+  -- executive search south africa — ZA: 90 vol, CPC $0.58, comp 0.37
+  (v_brand_id, v_cluster_6, 'executive search south africa', 90, 37, 'C',
+   69, 'ZA db: 90 vol, CPC $0.58, comp 0.37 · mirrors executive recruitment south africa · both should target same landing page · geo-targeted service page priority',
+   'opportunity'),
+
+  -- headhunters south africa — ZA: 50 vol, CPC $0.66, comp 0.43
+  (v_brand_id, v_cluster_6, 'headhunters south africa', 50, 43, 'C',
+   64, 'ZA db: 50 vol, CPC $0.66, comp 0.43 · confirms SA headhunting demand · supports CA Global brand identity as headhunting specialist in SA market',
+   'opportunity')
+
+  on conflict (brand_id, keyword) do update
+    set cluster_id           = excluded.cluster_id,
+        volume               = excluded.volume,
+        difficulty           = excluded.difficulty,
+        search_intent        = excluded.search_intent,
+        priority_score       = excluded.priority_score,
+        opportunity_rationale = excluded.opportunity_rationale,
+        last_synced          = now();
+
+  -- ─── Competitor gap records ────────────────────────────────────────────────
+  -- michaelpage.co.za, humancapital.co.za, robertwalters.co.za all return
+  -- ERROR 50 in ZA database — not indexed by SEMrush at this time.
+  -- Korn Ferry remains primary global gap signal (US database).
 
   insert into competitors (brand_id, competitor_domain, gap_keywords)
   values (
@@ -415,5 +490,11 @@ begin
   )
   on conflict (brand_id, competitor_domain) do update
     set gap_keywords = excluded.gap_keywords;
+
+  -- Note: ZA-database .co.za competitors not indexed in SEMrush (June 2026).
+  -- michaelpage.co.za — ERROR 50 (za db)
+  -- humancapital.co.za — ERROR 50 (za db)
+  -- robertwalters.co.za — ERROR 50 (za db)
+  -- Re-check these quarterly as SEMrush ZA index grows.
 
 end $$;
