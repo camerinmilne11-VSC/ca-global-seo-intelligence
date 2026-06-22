@@ -87,23 +87,31 @@ export async function getDomainKeywords(domain: string, limit = 100): Promise<(S
   })
   const res  = await fetch(url)
   const text = await res.text()
-  if (!text || text.startsWith('ERROR')) return []
-  const lines = text.trim().split('\n')
-  if (lines.length < 2) return []
-  const headers = lines[0].split(';')
-  return lines.slice(1).filter(Boolean).map(line => {
-    const values = line.split(';')
-    const row: Record<string, string> = {}
-    headers.forEach((h, i) => { row[h.trim()] = values[i]?.trim() || '' })
-    return {
-      keyword:    row['Keyword'] || '',
-      volume:     parseInt(row['Search Volume'] || '0', 10),
-      difficulty: parseFloat(row['Keyword Difficulty Index'] || '50'),
-      cpc:        parseFloat(row['CPC'] || '0'),
-      intent:     (row['Intent'] as SearchIntent) || 'I',
-      position:   parseInt(row['Position'] || '100', 10),
+
+  // Build a keyword → position map from the raw CSV (Position column not in COLUMN_MAP)
+  const positionMap = new Map<string, number>()
+  if (text && !text.startsWith('ERROR') && text.trim() !== '') {
+    const lines = text.trim().split('\n').filter(Boolean)
+    if (lines.length >= 2) {
+      const headers = lines[0].split(';').map(h => h.trim())
+      const kwIdx  = headers.indexOf('Keyword')
+      const posIdx = headers.indexOf('Position')
+      if (kwIdx !== -1 && posIdx !== -1) {
+        lines.slice(1).forEach(line => {
+          const values = line.split(';')
+          const kw  = values[kwIdx]?.trim()
+          const pos = parseInt(values[posIdx]?.trim() || '100', 10)
+          if (kw) positionMap.set(kw, pos)
+        })
+      }
     }
-  }).filter(k => k.keyword && k.volume > 0)
+  }
+
+  // Reuse parseSemrushCsv for all core keyword fields
+  return parseSemrushCsv(text).map(kw => ({
+    ...kw,
+    position: positionMap.get(kw.keyword) ?? 100,
+  }))
 }
 
 // ─── Priority Scoring ────────────────────────────────────────────────────────
