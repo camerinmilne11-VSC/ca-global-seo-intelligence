@@ -81,7 +81,11 @@ Return ONLY this JSON:
   })
 
   const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-  return JSON.parse(text)
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
 }
 
 export async function generateDraft(params: {
@@ -128,5 +132,9 @@ Return ONLY this JSON:
   })
 
   const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-  return JSON.parse(text)
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
 }
