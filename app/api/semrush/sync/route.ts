@@ -39,14 +39,24 @@ export async function POST(req: NextRequest | Request) {
     return NextResponse.json({ error: 'Brand not found' }, { status: 404 })
   }
 
-  // Fetch current domain keywords to detect gaps
-  const domainKws = await getDomainKeywords(brandRow.domain, 200)
-  const rankedSet = new Set(domainKws.map(k => k.keyword.toLowerCase()))
+  // Fetch current domain keywords to detect gaps (non-fatal — augments seed data only)
+  let rankedSet = new Set<string>()
+  try {
+    const domainKws = await getDomainKeywords(brandRow.domain, 200)
+    rankedSet = new Set(domainKws.map(k => k.keyword.toLowerCase()))
+  } catch (domainErr) {
+    console.error('[sync] getDomainKeywords failed, continuing without domain data:', domainErr)
+  }
 
-  // Expand each seed keyword into related keywords
+  // Expand each seed keyword into related keywords; partial failures are tolerated
   const seeds    = SEED_KEYWORDS[brand]
-  const allKws   = await Promise.all(seeds.map(s => getRelatedKeywords(s, 30)))
-  const flat     = allKws.flat()
+  const settled  = await Promise.allSettled(seeds.map(s => getRelatedKeywords(s, 30)))
+  settled
+    .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+    .forEach(r => console.error('[sync] getRelatedKeywords failed for a seed:', r.reason))
+  const flat     = settled
+    .filter((r): r is PromiseFulfilledResult<Awaited<ReturnType<typeof getRelatedKeywords>>> => r.status === 'fulfilled')
+    .flatMap(r => r.value)
 
   // Deduplicate
   const seen     = new Set<string>()
