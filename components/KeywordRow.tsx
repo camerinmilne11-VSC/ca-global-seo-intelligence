@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { OpportunityScore } from './OpportunityScore'
 import { Button } from '@/components/ui/button'
-import { getStatusColor, getIntentLabel, formatStatusLabel } from '@/lib/component-utils'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { getStatusColor, getIntentLabel } from '@/lib/component-utils'
 import type { KeywordWithRelations, ContentStatus } from '@/types'
 
 type Props = {
@@ -92,9 +93,17 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
         {getIntentLabel(keyword.search_intent)}
       </td>
       <td className="px-4 py-3">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getStatusColor(status)}`}>
-          {formatStatusLabel(status)}
-        </span>
+        <Select value={status} onValueChange={(v) => updateStatus(v as ContentStatus)}>
+          <SelectTrigger className={`text-xs h-7 w-32 border-0 px-2 py-0.5 rounded-full font-medium ${getStatusColor(status)}`}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="opportunity">Opportunity</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="published">Published</SelectItem>
+            <SelectItem value="paused">Paused</SelectItem>
+          </SelectContent>
+        </Select>
       </td>
       <td className="px-4 py-3">
         <div className="flex gap-2 flex-wrap">
@@ -131,46 +140,6 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
             >
               View Draft
             </a>
-          )}
-          {status === 'opportunity' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => updateStatus('in_progress')}
-              className="text-xs h-7 hover:bg-brand-teal-faint"
-            >
-              Claim
-            </Button>
-          )}
-          {status === 'in_progress' && (
-            <>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateStatus('opportunity')}
-                className="text-xs h-7 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-              >
-                Unclaim
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => updateStatus('published')}
-                className="text-xs h-7 hover:bg-brand-teal-faint"
-              >
-                Publish
-              </Button>
-            </>
-          )}
-          {status === 'published' && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => updateStatus('in_progress')}
-              className="text-xs h-7 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
-            >
-              Reopen
-            </Button>
           )}
         </div>
         {actionError && (
