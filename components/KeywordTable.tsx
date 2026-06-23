@@ -10,10 +10,11 @@ import type { KeywordWithRelations, ContentStatus } from '@/types'
 
 type Props = {
   keywords: KeywordWithRelations[]
+  brand: string
   onRefresh?: () => void
 }
 
-export function KeywordTable({ keywords, onRefresh }: Props) {
+export function KeywordTable({ keywords, brand, onRefresh }: Props) {
   const [search,       setSearch]       = useState('')
   const [statusFilter, setStatusFilter] = useState<ContentStatus | 'all'>('all')
   const [sortField,    setSortField]    = useState<SortField>('priority_score')
@@ -99,6 +100,7 @@ export function KeywordTable({ keywords, onRefresh }: Props) {
               <KeywordRow
                 key={kw.id}
                 keyword={kw}
+                brand={brand}
                 onBriefGenerated={onRefresh}
                 onDraftGenerated={onRefresh}
               />

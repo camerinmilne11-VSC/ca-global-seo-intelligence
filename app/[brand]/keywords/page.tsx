@@ -48,7 +48,7 @@ export default async function KeywordsPage({ params }: Props) {
         </h2>
         <SyncButton brand={brand} />
       </div>
-      <KeywordTable keywords={keywords} />
+      <KeywordTable keywords={keywords} brand={brand} />
     </div>
   )
 }

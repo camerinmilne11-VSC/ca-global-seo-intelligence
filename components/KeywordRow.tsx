@@ -8,15 +8,18 @@ import type { KeywordWithRelations, ContentStatus } from '@/types'
 
 type Props = {
   keyword: KeywordWithRelations
+  brand: string
   onBriefGenerated?: () => void
   onDraftGenerated?: () => void
 }
 
-export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Props) {
-  const [briefLoading, setBriefLoading] = useState(false)
-  const [draftLoading, setDraftLoading] = useState(false)
-  const [status, setStatus]             = useState<ContentStatus>(keyword.content_status)
-  const [actionError, setActionError]   = useState<string | null>(null)
+export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated }: Props) {
+  const [briefLoading,  setBriefLoading]  = useState(false)
+  const [draftLoading,  setDraftLoading]  = useState(false)
+  const [status,        setStatus]        = useState<ContentStatus>(keyword.content_status)
+  const [actionError,   setActionError]   = useState<string | null>(null)
+  const [briefReady,    setBriefReady]    = useState(!!keyword.brief)
+  const [draftReady,    setDraftReady]    = useState(!!keyword.draft)
 
   async function generateBrief() {
     setBriefLoading(true)
@@ -29,6 +32,7 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
       })
       if (!res.ok) throw new Error('Brief generation failed')
       await res.json()
+      setBriefReady(true)
       onBriefGenerated?.()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Brief generation failed')
@@ -48,6 +52,7 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
       })
       if (!res.ok) throw new Error('Draft generation failed')
       await res.json()
+      setDraftReady(true)
       onDraftGenerated?.()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Draft generation failed')
@@ -100,8 +105,16 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
             disabled={briefLoading}
             className="text-xs h-7 border-brand-teal hover:bg-brand-teal-faint"
           >
-            {briefLoading ? '…' : keyword.brief ? '↻ Brief' : '+ Brief'}
+            {briefLoading ? 'Generating…' : briefReady ? '↻ Brief' : '+ Brief'}
           </Button>
+          {briefReady && !briefLoading && (
+            <a
+              href={`/${brand}/briefs`}
+              className="text-xs h-7 flex items-center px-2 text-brand-teal underline underline-offset-2 hover:text-brand-teal-dark"
+            >
+              View Brief
+            </a>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -109,8 +122,16 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
             disabled={draftLoading}
             className="text-xs h-7 border-brand-teal hover:bg-brand-teal-faint"
           >
-            {draftLoading ? '…' : keyword.draft ? '↻ Draft' : '+ Draft'}
+            {draftLoading ? 'Generating…' : draftReady ? '↻ Draft' : '+ Draft'}
           </Button>
+          {draftReady && !draftLoading && (
+            <a
+              href={`/${brand}/drafts`}
+              className="text-xs h-7 flex items-center px-2 text-brand-teal underline underline-offset-2 hover:text-brand-teal-dark"
+            >
+              View Draft
+            </a>
+          )}
           {status === 'opportunity' && (
             <Button
               size="sm"
@@ -128,12 +149,14 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
               onClick={() => updateStatus('published')}
               className="text-xs h-7 hover:bg-brand-teal-faint"
             >
-              Publish ✓
+              Publish
             </Button>
           )}
         </div>
         {actionError && (
-          <span className="text-red-500 text-xs mt-1">{actionError}</span>
+          <div className="mt-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+            {actionError}
+          </div>
         )}
       </td>
     </tr>
