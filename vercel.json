@@ -1,0 +1,7 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "app/api/semrush/**": { "maxDuration": 30 },
+    "app/api/ai/**":      { "maxDuration": 30 }
+  }
+}
