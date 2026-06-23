@@ -143,13 +143,33 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
             </Button>
           )}
           {status === 'in_progress' && (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => updateStatus('opportunity')}
+                className="text-xs h-7 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+              >
+                Unclaim
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => updateStatus('published')}
+                className="text-xs h-7 hover:bg-brand-teal-faint"
+              >
+                Publish
+              </Button>
+            </>
+          )}
+          {status === 'published' && (
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => updateStatus('published')}
-              className="text-xs h-7 hover:bg-brand-teal-faint"
+              onClick={() => updateStatus('in_progress')}
+              className="text-xs h-7 text-gray-400 hover:text-gray-600 hover:bg-gray-50"
             >
-              Publish
+              Reopen
             </Button>
           )}
         </div>
