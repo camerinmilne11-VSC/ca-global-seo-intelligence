@@ -18,6 +18,7 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
   const [briefLoading,  setBriefLoading]  = useState(false)
   const [draftLoading,  setDraftLoading]  = useState(false)
   const [socialLoading, setSocialLoading] = useState(false)
+  const [resetLoading,  setResetLoading]  = useState(false)
   const [status,        setStatus]        = useState<ContentStatus>(keyword.content_status)
   const [actionError,   setActionError]   = useState<string | null>(null)
   const [briefReady,    setBriefReady]    = useState(!!keyword.brief)
@@ -80,6 +81,26 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
       setActionError(err instanceof Error ? err.message : 'Social generation failed')
     } finally {
       setSocialLoading(false)
+    }
+  }
+
+  async function resetContent() {
+    setResetLoading(true)
+    setActionError(null)
+    try {
+      const res = await fetch('/api/keywords/reset', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId: keyword.id }),
+      })
+      if (!res.ok) throw new Error('Reset failed')
+      setBriefReady(false)
+      setDraftReady(false)
+      setSocialReady(false)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Reset failed')
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -178,6 +199,17 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
             >
               View Post
             </a>
+          )}
+          {(briefReady || draftReady || socialReady) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={resetContent}
+              disabled={resetLoading}
+              className="text-xs h-7 text-gray-400 hover:text-red-500 hover:bg-red-50 ml-1"
+            >
+              {resetLoading ? '…' : 'Reset'}
+            </Button>
           )}
         </div>
         {actionError && (
