@@ -20,6 +20,10 @@ function loadKnowledgeBase() {
   }
 }
 
+function stripFences(text: string): string {
+  return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
+}
+
 function systemPrompt(brandName: string): string {
   const kb = loadKnowledgeBase()
   return `You are a senior SEO content strategist for ${brandName}, a specialist recruitment firm operating across Africa and globally.
@@ -80,7 +84,8 @@ Return ONLY this JSON:
     }],
   })
 
-  const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const text = stripFences(raw)
   try {
     return JSON.parse(text)
   } catch {
@@ -133,7 +138,8 @@ Return ONLY this JSON (content must be a single string with \\n for line breaks)
     }],
   })
 
-  const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const text = stripFences(raw)
   try {
     return JSON.parse(text)
   } catch {
@@ -175,7 +181,8 @@ Return ONLY this JSON:
     }],
   })
 
-  const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const text = stripFences(raw)
   try {
     return JSON.parse(text)
   } catch {
