@@ -128,6 +128,7 @@ Requirements:
 - Include the primary keyword in the first paragraph and naturally throughout
 - Include a FAQ section (3–5 questions with full paragraph answers)
 - End with a strong conclusion paragraph and call-to-action
+- No dashes of any kind (no hyphens used as punctuation, no em dashes, no en dashes) — use commas or full stops instead
 
 Return ONLY this JSON (content must be a single string with \\n for line breaks):
 {
@@ -140,10 +141,22 @@ Return ONLY this JSON (content must be a single string with \\n for line breaks)
 
   const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
   const text = stripFences(raw)
+  let parsed: { seo_title: string; meta_description: string; content: string }
   try {
-    return JSON.parse(text)
+    parsed = JSON.parse(text)
   } catch {
     throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
+
+  const stripDashes = (s: string) => s
+    .replace(/—|–|--+/g, ',')
+    .replace(/ - /g, ', ')
+    .replace(/  +/g, ' ')
+
+  return {
+    seo_title:        stripDashes(parsed.seo_title),
+    meta_description: stripDashes(parsed.meta_description),
+    content:          stripDashes(parsed.content),
   }
 }
 
