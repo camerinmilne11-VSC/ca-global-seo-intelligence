@@ -17,10 +17,12 @@ type Props = {
 export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated }: Props) {
   const [briefLoading,  setBriefLoading]  = useState(false)
   const [draftLoading,  setDraftLoading]  = useState(false)
+  const [socialLoading, setSocialLoading] = useState(false)
   const [status,        setStatus]        = useState<ContentStatus>(keyword.content_status)
   const [actionError,   setActionError]   = useState<string | null>(null)
   const [briefReady,    setBriefReady]    = useState(!!keyword.brief)
   const [draftReady,    setDraftReady]    = useState(!!keyword.draft)
+  const [socialReady,   setSocialReady]   = useState(!!keyword.social)
 
   async function generateBrief() {
     setBriefLoading(true)
@@ -59,6 +61,25 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
       setActionError(err instanceof Error ? err.message : 'Draft generation failed')
     } finally {
       setDraftLoading(false)
+    }
+  }
+
+  async function generateSocial() {
+    setSocialLoading(true)
+    setActionError(null)
+    try {
+      const res = await fetch('/api/ai/social', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywordId: keyword.id }),
+      })
+      if (!res.ok) throw new Error('Social generation failed')
+      await res.json()
+      setSocialReady(true)
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Social generation failed')
+    } finally {
+      setSocialLoading(false)
     }
   }
 
@@ -139,6 +160,23 @@ export function KeywordRow({ keyword, brand, onBriefGenerated, onDraftGenerated 
               className="text-xs h-7 flex items-center px-2 text-brand-teal underline underline-offset-2 hover:text-brand-teal-dark"
             >
               View Draft
+            </a>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={generateSocial}
+            disabled={socialLoading}
+            className="text-xs h-7 border-brand-teal hover:bg-brand-teal-faint"
+          >
+            {socialLoading ? 'Generating…' : socialReady ? '↻ Social' : '+ Social'}
+          </Button>
+          {socialReady && !socialLoading && (
+            <a
+              href={`/${brand}/socials`}
+              className="text-xs h-7 flex items-center px-2 text-brand-teal underline underline-offset-2 hover:text-brand-teal-dark"
+            >
+              View Post
             </a>
           )}
         </div>

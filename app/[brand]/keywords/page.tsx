@@ -31,7 +31,7 @@ export default async function KeywordsPage({ params }: Props) {
     if (brandRow?.id) {
       const { data } = await db
         .from('keywords')
-        .select('*, brief:briefs(id), draft:drafts(id), cluster:clusters(pillar_name)')
+        .select('*, brief:briefs(id), draft:drafts(id), social:socials(id), cluster:clusters(pillar_name)')
         .eq('brand_id', brandRow.id)
         .order('priority_score', { ascending: false })
       keywords = (data ?? []) as KeywordWithRelations[]

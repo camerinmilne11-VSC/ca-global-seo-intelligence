@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
-import type { Brief, Draft, SearchIntent } from '@/types'
+import type { Brief, Draft, Social, SearchIntent } from '@/types'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const MODEL  = 'claude-sonnet-4-6'
@@ -96,18 +96,18 @@ export async function generateDraft(params: {
   clusterName: string
   brandName: string
   brief?: Pick<Brief, 'recommended_title' | 'content_angle' | 'heading_structure'> | null
-}): Promise<Omit<Draft, 'id' | 'keyword_id' | 'generated_at'>> {
+}): Promise<Pick<Draft, 'seo_title' | 'meta_description' | 'content'>> {
   const briefCtx = params.brief
-    ? `\nExisting brief context:\nTitle: ${params.brief.recommended_title}\nAngle: ${params.brief.content_angle}\nH2s: ${params.brief.heading_structure.h2s.map(h => h.heading).join(', ')}`
+    ? `\nBrief context:\nTitle: ${params.brief.recommended_title}\nAngle: ${params.brief.content_angle}\nH2s: ${params.brief.heading_structure.h2s.map(h => h.heading).join(', ')}`
     : ''
 
   const msg = await client.messages.create({
     model:      MODEL,
-    max_tokens: 2500,
+    max_tokens: 4000,
     system:     systemPrompt(params.brandName),
     messages:   [{
       role:    'user',
-      content: `Generate a first-draft framework for this keyword:
+      content: `Write a complete, publication-ready SEO article.
 
 Keyword: "${params.keyword}"
 Monthly Volume: ${params.volume.toLocaleString()}
@@ -115,18 +115,62 @@ Difficulty: ${params.difficulty}/100
 Intent: ${params.intent}
 Brand: ${params.brandName}${briefCtx}
 
+Requirements:
+- 900–1200 words of fully written, publication-ready prose
+- Start the content field with # followed by the H1 title
+- Use ## for H2 headings, ### for H3 if needed
+- Write complete paragraphs under each heading — NOT bullets or outlines
+- Include the primary keyword in the first paragraph and naturally throughout
+- Include a FAQ section (3–5 questions with full paragraph answers)
+- End with a strong conclusion paragraph and call-to-action
+
+Return ONLY this JSON (content must be a single string with \\n for line breaks):
+{
+  "seo_title": "string (max 60 chars, keyword included)",
+  "meta_description": "string (max 160 chars, compelling, keyword included)",
+  "content": "string (complete markdown article, 900–1200 words)"
+}`,
+    }],
+  })
+
+  const text = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
+}
+
+export async function generateSocial(params: {
+  keyword: string
+  brandName: string
+  articleTitle?: string
+}): Promise<Omit<Social, 'id' | 'keyword_id' | 'generated_at'>> {
+  const articleCtx = params.articleTitle ? `\nArticle title: "${params.articleTitle}"` : ''
+
+  const msg = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 800,
+    system:     systemPrompt(params.brandName),
+    messages:   [{
+      role:    'user',
+      content: `Write an Instagram and LinkedIn social media post for this topic.
+
+Keyword/Topic: "${params.keyword}"
+Brand: "${params.brandName}"${articleCtx}
+
+Requirements:
+- Hook in the first line (punchy, 5–10 words, no hashtags on line 1)
+- Professional but conversational tone — sounds like a real person, not a brand account
+- 150–250 words for the caption body
+- Tasteful emojis (2–4 total, meaningful not decorative)
+- End with a clear call-to-action (visit link in bio, comment below, etc.)
+- 8–12 relevant hashtags in a separate block at the end
+
 Return ONLY this JSON:
 {
-  "proposed_title": "string",
-  "seo_title": "string (max 60 chars)",
-  "meta_description": "string (max 160 chars)",
-  "h1": "string",
-  "h2_structure": ["string"],
-  "intro_suggestion": "2-3 sentence opening hook",
-  "key_points": ["one talking point per H2 section"],
-  "faq_section": [{"question":"string","answer":"2-3 sentence answer"}],
-  "internal_links": ["anchor text → page/topic"],
-  "cta": "string"
+  "caption": "string (full post text, use \\n for line breaks, hashtags on separate lines at end)",
+  "hashtags": ["string"]
 }`,
     }],
   })

@@ -2,76 +2,54 @@
 
 import type { Draft } from '@/types'
 
+function ArticleRenderer({ content }: { content: string }) {
+  const lines = content.split('\n')
+  const elements: React.ReactNode[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    if (line.startsWith('### ')) {
+      elements.push(<h3 key={i} className="text-base font-semibold text-brand-teal-dark mt-5 mb-2">{line.slice(4)}</h3>)
+    } else if (line.startsWith('## ')) {
+      elements.push(<h2 key={i} className="text-lg font-bold text-brand-teal-dark mt-7 mb-3 pb-1 border-b border-gray-100">{line.slice(3)}</h2>)
+    } else if (line.startsWith('# ')) {
+      elements.push(<h1 key={i} className="text-2xl font-bold text-brand-teal-dark mb-4">{line.slice(2)}</h1>)
+    } else if (line.startsWith('**') && line.endsWith('**') && line.length > 4) {
+      elements.push(<p key={i} className="font-semibold text-gray-800 mb-2">{line.slice(2, -2)}</p>)
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      elements.push(<li key={i} className="ml-5 list-disc text-gray-700 leading-relaxed mb-1">{line.slice(2)}</li>)
+    } else if (line.trim() === '') {
+      elements.push(<div key={i} className="h-2" />)
+    } else {
+      elements.push(<p key={i} className="text-gray-700 leading-relaxed mb-3">{line}</p>)
+    }
+    i++
+  }
+
+  return <div className="font-sans">{elements}</div>
+}
+
 type Props = { draft: Draft }
 
 export function DraftViewer({ draft }: Props) {
   return (
-    <div className="space-y-6 text-sm">
-      {draft.proposed_title && (
-        <div className="mb-3">
-          <span className="text-xs font-medium text-brand-neutral-dark uppercase tracking-wide">Proposed Title</span>
-          <p className="text-lg font-semibold text-gray-900 mt-1">{draft.proposed_title}</p>
-        </div>
-      )}
-
+    <div className="space-y-4 text-sm">
       <div className="bg-brand-teal text-white rounded-lg p-4 space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-brand-teal-faint">SEO Title</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-white/70">SEO Title</p>
         <p className="font-semibold">{draft.seo_title}</p>
-        <p className="text-xs text-white/70 mt-1">Meta: {draft.meta_description}</p>
+        <p className="text-xs text-white/70 mt-1 border-t border-white/20 pt-1">
+          Meta: {draft.meta_description}
+        </p>
       </div>
 
-      <div>
-        <h3 className="font-semibold text-brand-teal mb-1">H1</h3>
-        <p className="text-base font-medium">{draft.h1}</p>
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-brand-teal mb-1">Opening Hook</h3>
-        <p className="text-gray-700 italic border-l-2 border-brand-teal pl-3">{draft.intro_suggestion}</p>
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-brand-teal mb-2">Article Structure</h3>
-        <div className="space-y-2">
-          {draft.h2_structure.map((h2, i) => (
-            <div key={i} className="flex items-start gap-3">
-              <span className="bg-brand-teal text-white text-xs px-1.5 py-0.5 rounded mt-0.5 shrink-0">H2</span>
-              <div>
-                <p className="font-medium">{h2}</p>
-                {draft.key_points[i] && (
-                  <p className="text-brand-neutral-dark text-xs mt-0.5">↳ {draft.key_points[i]}</p>
-                )}
-              </div>
-            </div>
-          ))}
+      {draft.content ? (
+        <div className="bg-white border border-gray-200 rounded-lg p-6">
+          <ArticleRenderer content={draft.content} />
         </div>
-      </div>
-
-      <div>
-        <h3 className="font-semibold text-brand-teal mb-1">FAQ Section</h3>
-        <div className="space-y-2">
-          {draft.faq_section.map((faq, i) => (
-            <div key={i} className="bg-brand-teal-faint rounded p-2 border border-brand-teal/20">
-              <p className="font-medium text-xs">{faq.question}</p>
-              <p className="text-brand-neutral-dark text-xs mt-0.5">{faq.answer}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {draft.internal_links.length > 0 && (
-        <div>
-          <h3 className="font-semibold text-brand-teal mb-1">Internal Links</h3>
-          <ul className="list-disc list-inside text-gray-700">
-            {draft.internal_links.map((link, i) => <li key={i}>{link}</li>)}
-          </ul>
-        </div>
+      ) : (
+        <p className="text-gray-400 italic">No article content — regenerate the draft.</p>
       )}
-
-      <div className="bg-brand-teal-faint border border-brand-teal rounded-lg p-3">
-        <h3 className="font-semibold text-brand-teal mb-1 text-xs uppercase tracking-wide">CTA</h3>
-        <p className="font-medium">{draft.cta}</p>
-      </div>
     </div>
   )
 }

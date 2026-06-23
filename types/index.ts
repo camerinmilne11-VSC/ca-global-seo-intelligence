@@ -40,6 +40,7 @@ export type KeywordWithRelations = Keyword & {
   cluster?: Cluster
   brief?: Brief | null
   draft?: Draft | null
+  social?: Social | null
 }
 
 export type FaqItem = { question: string; answer: string }
@@ -70,16 +71,26 @@ export type Brief = {
 export type Draft = {
   id: string
   keyword_id: string
-  proposed_title: string
   seo_title: string
   meta_description: string
-  h1: string
-  h2_structure: string[]
-  intro_suggestion: string
-  key_points: string[]
-  faq_section: FaqItem[]
-  internal_links: string[]
-  cta: string
+  content: string
+  // legacy fields kept for DB compatibility
+  proposed_title?: string
+  h1?: string
+  h2_structure?: string[]
+  intro_suggestion?: string
+  key_points?: string[]
+  faq_section?: FaqItem[]
+  internal_links?: string[]
+  cta?: string
+  generated_at: string
+}
+
+export type Social = {
+  id: string
+  keyword_id: string
+  caption: string
+  hashtags: string[]
   generated_at: string
 }
 

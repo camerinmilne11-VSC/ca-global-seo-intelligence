@@ -42,7 +42,17 @@ export async function POST(req: Request) {
   const { data, error } = await db
     .from('drafts')
     .upsert(
-      { keyword_id: body.keywordId, ...draft, generated_at: new Date().toISOString() },
+      {
+        keyword_id:      body.keywordId,
+        seo_title:       draft.seo_title,
+        meta_description: draft.meta_description,
+        content:         draft.content,
+        // legacy fields — kept for DB NOT NULL constraints
+        proposed_title:  '',
+        h1:              '',
+        intro_suggestion: '',
+        generated_at:    new Date().toISOString(),
+      },
       { onConflict: 'keyword_id' },
     )
     .select()
