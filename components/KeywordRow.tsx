@@ -28,8 +28,8 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
         body: JSON.stringify({ keywordId: keyword.id }),
       })
       if (!res.ok) throw new Error('Brief generation failed')
-      const data = await res.json()
-      onBriefGenerated?.(data)
+      await res.json()
+      onBriefGenerated?.()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Brief generation failed')
     } finally {
@@ -47,8 +47,8 @@ export function KeywordRow({ keyword, onBriefGenerated, onDraftGenerated }: Prop
         body: JSON.stringify({ keywordId: keyword.id }),
       })
       if (!res.ok) throw new Error('Draft generation failed')
-      const data = await res.json()
-      onDraftGenerated?.(data)
+      await res.json()
+      onDraftGenerated?.()
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Draft generation failed')
     } finally {
