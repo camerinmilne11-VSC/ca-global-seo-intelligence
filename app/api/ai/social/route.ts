@@ -15,7 +15,7 @@ export async function POST(req: Request) {
 
   const { data: kw, error: kwErr } = await db
     .from('keywords')
-    .select('*, brand:brands(name,slug), draft:drafts(seo_title)')
+    .select('*, brand:brands(name,slug), draft:drafts(seo_title, content)')
     .eq('id', body.keywordId)
     .single()
 
@@ -26,9 +26,10 @@ export async function POST(req: Request) {
   let social: Awaited<ReturnType<typeof generateSocial>>
   try {
     social = await generateSocial({
-      keyword:      kw.keyword,
-      brandName:    kw.brand?.name ?? 'CA Global',
-      articleTitle: kw.draft?.seo_title ?? undefined,
+      keyword:         kw.keyword,
+      brandName:       kw.brand?.name ?? 'CA Global',
+      articleTitle:    kw.draft?.seo_title ?? undefined,
+      articleContent:  kw.draft?.content ?? undefined,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Social generation failed'

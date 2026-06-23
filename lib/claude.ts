@@ -151,8 +151,11 @@ export async function generateSocial(params: {
   keyword: string
   brandName: string
   articleTitle?: string
+  articleContent?: string
 }): Promise<Omit<Social, 'id' | 'keyword_id' | 'generated_at'>> {
-  const articleCtx = params.articleTitle ? `\nArticle title: "${params.articleTitle}"` : ''
+  const articleCtx = params.articleTitle
+    ? `\nArticle title: "${params.articleTitle}"${params.articleContent ? `\n\nFull article:\n${params.articleContent.slice(0, 3000)}` : ''}`
+    : ''
 
   const msg = await client.messages.create({
     model:      MODEL,
@@ -160,22 +163,24 @@ export async function generateSocial(params: {
     system:     systemPrompt(params.brandName),
     messages:   [{
       role:    'user',
-      content: `Write an Instagram and LinkedIn social media post for this topic.
+      content: `Write an Instagram and LinkedIn social media post that promotes this blog article.
 
 Keyword/Topic: "${params.keyword}"
 Brand: "${params.brandName}"${articleCtx}
 
+The goal is to summarise the key insight from the article and entice followers to click through to read the full post.
+
 Requirements:
 - Hook in the first line (punchy, 5–10 words, no hashtags on line 1)
-- Professional but conversational tone — sounds like a real person, not a brand account
-- 150–250 words for the caption body
+- 2–3 short paragraphs summarising the most valuable point(s) from the article — enough to add value but leave them wanting more
+- Professional but conversational tone — sounds like a real person, not a corporate account
 - Tasteful emojis (2–4 total, meaningful not decorative)
-- End with a clear call-to-action (visit link in bio, comment below, etc.)
-- 8–12 relevant hashtags in a separate block at the end
+- End with exactly this call-to-action on its own line: "Read the full article here: [INSERT LINK]"
+- 8–12 relevant hashtags on a separate line at the very end
 
 Return ONLY this JSON:
 {
-  "caption": "string (full post text, use \\n for line breaks, hashtags on separate lines at end)",
+  "caption": "string (full post text, use \\n for line breaks, CTA and hashtags each on their own lines at end)",
   "hashtags": ["string"]
 }`,
     }],
