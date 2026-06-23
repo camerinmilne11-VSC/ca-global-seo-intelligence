@@ -174,7 +174,8 @@ Requirements:
 - Hook in the first line (punchy, 5–10 words, no hashtags on line 1)
 - 2–3 short paragraphs summarising the most valuable point(s) from the article — enough to add value but leave them wanting more
 - Professional but conversational tone — sounds like a real person, not a corporate account
-- Tasteful emojis (2–4 total, meaningful not decorative)
+- No emojis anywhere in the caption
+- No dashes of any kind (no hyphens, no em dashes, no en dashes) — use commas or full stops instead
 - End with exactly this call-to-action on its own line: "Read the full article here: [INSERT LINK]"
 - 8–12 relevant hashtags on a separate line at the very end
 
@@ -188,9 +189,23 @@ Return ONLY this JSON:
 
   const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
   const text = stripFences(raw)
+  let parsed: { caption: string; hashtags: string[] }
   try {
-    return JSON.parse(text)
+    parsed = JSON.parse(text)
   } catch {
     throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
   }
+
+  // Enforce no emojis and no dashes regardless of what Claude produces
+  const cleanCaption = parsed.caption
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+    .replace(/—|–|--+/g, ',')
+    .replace(/ - /g, ', ')
+    .replace(/^- /gm, '')
+    .replace(/  +/g, ' ')
+    .trim()
+
+  return { caption: cleanCaption, hashtags: parsed.hashtags }
 }
