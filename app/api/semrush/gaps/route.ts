@@ -6,9 +6,11 @@ import { getDomainKeywords } from '@/lib/semrush'
 import { createServiceClient } from '@/lib/supabase-service'
 
 const COMPETITORS: Record<string, string[]> = {
-  'ca-global':  ['michaelpage.co.za', 'executivesearch.africa', 'humancapital.co.za'],
-  'ca-mining':  ['miningpeople.com.au', 'mining-recruitment.com'],
-  'ca-finance': ['robertwalters.co.za', 'heidrick.com'],
+  'ca-global':    ['michaelpage.co.za', 'executivesearch.africa', 'humancapital.co.za'],
+  'ca-mining':    ['miningpeople.com.au', 'mining-recruitment.com'],
+  'ca-finance':   ['robertwalters.co.za', 'heidrick.com'],
+  'vogue-hygiene':['bidvestservices.co.za', 'servest.co.za', 'compass-group.co.za'],
+  'ca-global-hr': ['deel.com', 'remote.com', 'papayaglobal.com'],
 }
 
 export async function POST(req: NextRequest | Request) {

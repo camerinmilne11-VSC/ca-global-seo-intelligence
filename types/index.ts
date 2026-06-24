@@ -2,7 +2,7 @@ export type Brand = {
   id: string
   name: string
   domain: string
-  slug: 'ca-global' | 'ca-mining' | 'ca-finance'
+  slug: 'ca-global' | 'ca-mining' | 'ca-finance' | 'vogue-hygiene' | 'ca-global-hr'
   brand_color: string
   created_at: string
 }

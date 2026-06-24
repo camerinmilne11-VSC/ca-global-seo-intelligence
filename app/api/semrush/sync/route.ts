@@ -21,6 +21,16 @@ const SEED_KEYWORDS: Record<string, string[]> = {
     'finance recruitment africa', 'banking recruitment africa', 'cfo recruitment',
     'financial services talent', 'investment recruitment africa',
   ],
+  'vogue-hygiene': [
+    'commercial cleaning services south africa', 'industrial cleaning cape town',
+    'hygiene solutions gauteng', 'eco friendly cleaning company',
+    'office cleaning services south africa',
+  ],
+  'ca-global-hr': [
+    'employer of record south africa', 'peo services africa',
+    'hr outsourcing south africa', 'payroll management south africa',
+    'eor services africa',
+  ],
 }
 
 export async function POST(req: NextRequest | Request) {

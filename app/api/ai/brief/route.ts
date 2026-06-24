@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       intent:      kw.search_intent,
       clusterName: kw.cluster?.pillar_name ?? 'General',
       brandName:   kw.brand?.name ?? 'CA Global',
+      brandSlug:   kw.brand?.slug,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Brief generation failed'

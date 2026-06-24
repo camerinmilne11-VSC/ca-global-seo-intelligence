@@ -6,16 +6,28 @@ import type { Brief, Draft, Social, SearchIntent } from '@/types'
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const MODEL  = 'claude-sonnet-4-6'
 
-function loadKnowledgeBase() {
+const BRAND_CONTEXT: Record<string, string> = {
+  'ca-global':    'a specialist executive recruitment firm operating across Africa and globally',
+  'ca-mining':    'a specialist mining recruitment firm operating across Africa and globally',
+  'ca-finance':   'a specialist finance recruitment firm operating across Africa and globally',
+  'vogue-hygiene':'a commercial cleaning and hygiene solutions company serving corporate and industrial clients across South Africa',
+  'ca-global-hr': 'a specialist HR outsourcing firm offering Employer of Record (EOR) and Professional Employer Organisation (PEO) services across Africa',
+}
+
+function loadKnowledgeBase(brandSlug?: string) {
   const kbDir = path.join(process.cwd(), 'knowledge-base')
   const read  = (file: string) => {
     try   { return fs.readFileSync(path.join(kbDir, file), 'utf-8') }
     catch { return `# ${file} not yet written` }
   }
+  const brandIndustryFile = brandSlug ? `${brandSlug}-industry.md` : null
+  const industryFile = brandIndustryFile && fs.existsSync(path.join(kbDir, brandIndustryFile))
+    ? brandIndustryFile
+    : 'industry.md'
   return {
     voice:            read('voice.md'),
     seo:              read('seo.md'),
-    industry:         read('industry.md'),
+    industry:         read(industryFile),
     contentFramework: read('content-framework.md'),
   }
 }
@@ -24,9 +36,10 @@ function stripFences(text: string): string {
   return text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim()
 }
 
-function systemPrompt(brandName: string): string {
-  const kb = loadKnowledgeBase()
-  return `You are a senior SEO content strategist for ${brandName}, a specialist recruitment firm operating across Africa and globally.
+function systemPrompt(brandName: string, brandSlug?: string): string {
+  const context = (brandSlug && BRAND_CONTEXT[brandSlug]) ?? 'a company operating across Africa'
+  const kb = loadKnowledgeBase(brandSlug)
+  return `You are a senior SEO content strategist for ${brandName}, ${context}.
 
 ## Brand Voice
 ${kb.voice}
@@ -50,11 +63,12 @@ export async function generateBrief(params: {
   intent: SearchIntent
   clusterName: string
   brandName: string
+  brandSlug?: string
 }): Promise<Omit<Brief, 'id' | 'keyword_id' | 'generated_at'>> {
   const msg = await client.messages.create({
     model:      MODEL,
     max_tokens: 2000,
-    system:     systemPrompt(params.brandName),
+    system:     systemPrompt(params.brandName, params.brandSlug),
     messages:   [{
       role:    'user',
       content: `Generate a content brief for this keyword opportunity:
@@ -100,6 +114,7 @@ export async function generateDraft(params: {
   intent: SearchIntent
   clusterName: string
   brandName: string
+  brandSlug?: string
   brief?: Pick<Brief, 'recommended_title' | 'content_angle' | 'heading_structure'> | null
 }): Promise<Pick<Draft, 'seo_title' | 'meta_description' | 'content'>> {
   const briefCtx = params.brief
@@ -109,7 +124,7 @@ export async function generateDraft(params: {
   const msg = await client.messages.create({
     model:      MODEL,
     max_tokens: 4000,
-    system:     systemPrompt(params.brandName),
+    system:     systemPrompt(params.brandName, params.brandSlug),
     messages:   [{
       role:    'user',
       content: `Write a complete, publication-ready SEO article.
@@ -163,6 +178,7 @@ Return ONLY this JSON (content must be a single string with \\n for line breaks)
 export async function generateSocial(params: {
   keyword: string
   brandName: string
+  brandSlug?: string
   articleTitle?: string
   articleContent?: string
 }): Promise<Omit<Social, 'id' | 'keyword_id' | 'generated_at'>> {
@@ -173,7 +189,7 @@ export async function generateSocial(params: {
   const msg = await client.messages.create({
     model:      MODEL,
     max_tokens: 800,
-    system:     systemPrompt(params.brandName),
+    system:     systemPrompt(params.brandName, params.brandSlug),
     messages:   [{
       role:    'user',
       content: `Write an Instagram and LinkedIn social media post that promotes this blog article.

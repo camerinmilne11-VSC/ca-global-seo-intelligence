@@ -7,9 +7,11 @@ import type { KeywordWithRelations, ContentStatus } from '@/types'
 // ─── BrandSwitcher ────────────────────────────────────────────────────────────
 
 export const BRANDS = [
-  { label: 'CA Global',  slug: 'ca-global' },
-  { label: 'CA Mining',  slug: 'ca-mining' },
-  { label: 'CA Finance', slug: 'ca-finance' },
+  { label: 'CA Global',     slug: 'ca-global' },
+  { label: 'CA Mining',     slug: 'ca-mining' },
+  { label: 'CA Finance',    slug: 'ca-finance' },
+  { label: 'Vogue Hygiene', slug: 'vogue-hygiene' },
+  { label: 'CA Global HR',  slug: 'ca-global-hr' },
 ] as const
 
 export type BrandSlug = (typeof BRANDS)[number]['slug']

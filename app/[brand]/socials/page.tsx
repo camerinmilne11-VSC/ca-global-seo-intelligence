@@ -7,6 +7,7 @@ import type { Social } from '@/types'
 
 const BRAND_NAMES: Record<string, string> = {
   'ca-global': 'CA Global', 'ca-mining': 'CA Mining', 'ca-finance': 'CA Finance',
+  'vogue-hygiene': 'Vogue Hygiene', 'ca-global-hr': 'CA Global HR',
 }
 
 type Props = { params: Promise<{ brand: string }> }

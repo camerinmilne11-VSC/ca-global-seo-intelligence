@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     social = await generateSocial({
       keyword:         kw.keyword,
       brandName:       kw.brand?.name ?? 'CA Global',
+      brandSlug:       kw.brand?.slug,
       articleTitle:    kw.draft?.seo_title ?? undefined,
       articleContent:  kw.draft?.content ?? undefined,
     })
