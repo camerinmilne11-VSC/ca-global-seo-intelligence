@@ -14,6 +14,19 @@ const COLUMN_MAP: Record<string, string> = {
   'Competition':                'competition',
 }
 
+// SEMrush returns intent as numeric codes (0=I, 1=N, 2=C, 3=T), sometimes comma-separated.
+// Pick the highest-value intent when multiple are returned.
+function mapIntent(raw: string): SearchIntent {
+  if (!raw) return 'I'
+  // Already in letter format
+  if (/^[INCT]$/.test(raw.trim())) return raw.trim() as SearchIntent
+  const codes = raw.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n))
+  if (codes.includes(3)) return 'T'
+  if (codes.includes(2)) return 'C'
+  if (codes.includes(1)) return 'N'
+  return 'I'
+}
+
 export function parseSemrushCsv(text: string): SemrushKeyword[] {
   if (!text || text.startsWith('ERROR') || text.trim() === '') return []
   const lines = text.trim().split('\n').filter(Boolean)
@@ -34,7 +47,7 @@ export function parseSemrushCsv(text: string): SemrushKeyword[] {
       volume,
       difficulty: parseFloat(row.difficulty || '50'),
       cpc:        parseFloat(row.cpc || '0'),
-      intent:     (row.intent as SearchIntent) || 'I',
+      intent:     mapIntent(row.intent),
     })
     return acc
   }, [])
