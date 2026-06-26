@@ -4,7 +4,7 @@ const features = [
   {
     name: 'Keywords',
     description:
-      'Your SEMrush keyword library, scored 0–100 by priority. Each score weighs search volume, keyword difficulty, intent, and market fit. Work down from the highest-scoring rows first.',
+      'Your SEMrush keyword library, scored 0 to 100 by priority. Each score weighs search volume, keyword difficulty, intent, and market fit. Work down from the highest-scoring rows first.',
   },
   {
     name: 'Topics',
@@ -14,22 +14,22 @@ const features = [
   {
     name: 'Brief',
     description:
-      'Generates a structured SEO content brief: recommended title, heading structure, keyword targets, FAQ ideas, and content angle. Takes around 45 seconds. A brief is optional — Draft can run without one.',
+      'Generates a structured SEO content brief: recommended title, heading structure, keyword targets, FAQ ideas, and content angle. Takes around 45 seconds. A brief is optional, Draft can run without one.',
   },
   {
     name: 'Draft',
     description:
-      'Generates a complete 900–1200 word, publication-ready article. Uses the brief for structure if one exists. Takes around 60 seconds. Carousel and Script both require a draft to exist first.',
+      'Generates a complete 900 to 1200 word, publication-ready article. Uses the brief for structure if one exists. Takes around 60 seconds. Carousel and Script both require a draft to exist first.',
   },
   {
     name: 'Social',
     description:
-      'Generates an Instagram and LinkedIn caption: image overlay text for the graphic, a punchy caption body, and 3–8 targeted hashtags. Uses the draft content if available.',
+      'Generates an Instagram and LinkedIn caption: image overlay text for the graphic, a punchy caption body, and 3 to 8 targeted hashtags. Uses the draft content if available.',
   },
   {
     name: 'Carousel',
     description:
-      'Generates 5 slides of text for your graphic designer. Slide 1 is the hook, slides 2–4 are key insights, slide 5 is a call to action. Requires a draft to exist first.',
+      'Generates 5 slides of text for your graphic designer. Slide 1 is the hook, slides 2 to 4 are key insights, slide 5 is a call to action. Requires a draft to exist first.',
   },
   {
     name: 'Script',
@@ -39,7 +39,7 @@ const features = [
   {
     name: 'Reset',
     description:
-      'Clears all generated content for a keyword or topic — brief, draft, social, carousel, and script — in one click. Use this to regenerate from scratch without deleting the keyword itself.',
+      'Clears all generated content for a keyword or topic (brief, draft, social, carousel, and script) in one click. Use this to regenerate from scratch without deleting the keyword itself.',
   },
 ]
 
@@ -50,7 +50,7 @@ export default function CoverPage() {
 
         {/* Brand label */}
         <p className="font-body text-xs font-semibold uppercase tracking-widest text-brand-teal-light mb-5">
-          CA Global Group — Internal Tool
+          CA Global Group · Internal Tool
         </p>
 
         {/* Title */}
