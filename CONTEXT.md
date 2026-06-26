@@ -1,6 +1,6 @@
 # Project Context — SEO Intelligence Dashboard
 
-Last updated: 2026-06-26
+Last updated: 2026-06-26 (session 2)
 
 ---
 
@@ -84,6 +84,12 @@ A `BrandSwitcher` (top nav) lets users switch between the 5 brands. A `BrandNav`
 
 ---
 
+## Cover page
+
+The dashboard now has a branded cover page at `/`. Full-screen dark teal background (`#0d3b39`), Poppins heading, Montserrat body, 8-feature grid explaining the tool, and a "Continue to Dashboard" button linking to `/ca-global/keywords`. The cover page uses the minimal root layout (no header/nav). The dashboard header title links back to `/` for easy return.
+
+---
+
 ## What the dashboard does
 
 ### Keywords page
@@ -95,7 +101,7 @@ Each row has action buttons that unlock in sequence:
 |---|---|---|---|
 | + Brief | Nothing | Structured SEO content brief | ~45s |
 | + Draft | Nothing (uses brief if exists) | Full 900-1200 word article | ~60s |
-| + Social | Nothing (uses draft if exists) | Instagram/LinkedIn caption | ~30s |
+| + Social | Nothing (uses draft if exists) | Instagram/LinkedIn caption + image text | ~30s |
 | + Carousel | Draft must exist | 5 slides of text for graphic designer | ~20s |
 | + Script | Draft must exist | 45-second talking-head video script | ~20s |
 | Reset | Any content exists | Clears all generated content for that keyword | instant |
@@ -136,15 +142,26 @@ Brand-specific industry files are auto-selected in `lib/claude.ts` via `loadKnow
 
 ---
 
+## Social captions (updated)
+
+The social caption generator now outputs three fields:
+- `image_text` — short phrase for the graphic overlay (shown in a dark banner at the top of SocialViewer). Stored in the new `socials.image_text` column (migration 004, applied 2026-06-26).
+- `caption` — punchy paragraphs + `🔗 [INSERT LINK]` on its own line + optional `Thoughts?` for discussion pieces
+- `hashtags` — 3 to 8 targeted tags (was 8 to 12)
+
+The prompt uses real writing samples as style examples. `🔗` (U+1F517) is now preserved through the emoji-stripping pass; all other emojis are still removed.
+
+---
+
 ## Content guardrails (enforced in code)
 
 - No em dashes, en dashes, or double dashes in any generated content — replaced with commas
-- No emojis in social captions or carousel/script text
-- Social posts always end with: Read the full article here: [INSERT LINK]
-- Carousel slide 5 always ends with: Read the full article — link in bio
+- No emojis in any content except `🔗` on the social caption link line
+- Social captions use `🔗 [INSERT LINK]` (not "Read the full article here:")
+- Carousel slide 5 always ends with: Read the full article, link in bio
 - Video scripts always end with a CTA directing viewers to the link in bio/comments
 
-Applied in `lib/claude.ts` as both prompt instructions and post-processing `stripDashes()` strips.
+Applied in `lib/claude.ts` as both prompt instructions and post-processing strips.
 
 ---
 
@@ -175,6 +192,7 @@ All API routes that write to the DB or call Claude check `supabase.auth.getUser(
 - Duplicate keywords in seed SQL caused ON CONFLICT errors — resolved per brand
 - `NEXT_PUBLIC_SUPABASE_URL` was missing from Vercel env vars — added via CLI
 - SEMrush returns intent as numeric codes (`0,2,3`) not letters — `mapIntent()` added to `lib/semrush.ts` to map to `I/N/C/T` before DB insert (was causing `keywords_search_intent_check` constraint violation on sync)
+- `🔗` emoji was being stripped from social captions by the emoji regex — fixed by splitting the unicode range around U+1F517
 
 ---
 
@@ -206,9 +224,10 @@ Note: Vercel encrypts sensitive vars — `vercel env pull` returns empty strings
 ## What still needs doing
 
 ### Do soon
+- [ ] Test the new social caption format end-to-end — generate a social for a CA Global keyword and verify the `image_text` field appears in SocialViewer, caption uses `🔗 [INSERT LINK]`, and hashtags are 3 to 8
 - [ ] Test content generation for Vogue Hygiene and CA Global HR — generate a brief and draft for one keyword each to confirm brand-specific knowledge base is injecting correctly (no recruitment language in Vogue output, EOR/PEO context present in CA Global HR output)
 - [ ] Test carousel and script generation end-to-end — generate a draft for a CA Global keyword then hit + Carousel and + Script to verify output quality
-- [ ] Review and refine the **knowledge base files** once real content is being generated — especially `vogue-hygiene-industry.md` and `ca-global-hr-industry.md`
+- [ ] Review and refine the knowledge base files once real content is being generated — especially `vogue-hygiene-industry.md` and `ca-global-hr-industry.md`
 - [ ] Establish a publishing cadence with Alexandra (suggest 2 articles per week per brand)
 
 ### Medium term
