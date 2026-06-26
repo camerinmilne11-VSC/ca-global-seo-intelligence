@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import fs from 'fs'
 import path from 'path'
-import type { Brief, Draft, Social, SearchIntent } from '@/types'
+import type { Brief, Draft, Social, Carousel, VideoScript, SearchIntent } from '@/types'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const MODEL  = 'claude-sonnet-4-6'
@@ -172,6 +172,131 @@ Return ONLY this JSON (content must be a single string with \\n for line breaks)
     seo_title:        stripDashes(parsed.seo_title),
     meta_description: stripDashes(parsed.meta_description),
     content:          stripDashes(parsed.content),
+  }
+}
+
+export async function generateCarousel(params: {
+  keyword: string
+  brandName: string
+  brandSlug?: string
+  articleTitle?: string
+  articleContent: string
+}): Promise<Omit<Carousel, 'id' | 'keyword_id' | 'generated_at'>> {
+  const msg = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 1000,
+    system:     systemPrompt(params.brandName, params.brandSlug),
+    messages:   [{
+      role:    'user',
+      content: `Create a LinkedIn/Instagram carousel post from this article. The carousel will be designed as static slides by a graphic designer — you are providing the text only.
+
+Keyword/Topic: "${params.keyword}"
+Brand: "${params.brandName}"
+Article title: "${params.articleTitle ?? params.keyword}"
+
+Full article:
+${params.articleContent.slice(0, 4000)}
+
+Requirements:
+- Maximum 5 slides
+- Slide 1: a bold hook statement (the single most compelling takeaway, 10-15 words max)
+- Slides 2-4: one key insight per slide, written as a punchy standalone statement (15-25 words each)
+- Slide 5: a call-to-action ending with "Read the full article — link in bio"
+- No bullet points, no dashes, no emojis
+- Professional but direct tone — each slide must work as a standalone statement
+- Do not number the slides in the text itself
+
+Return ONLY this JSON:
+{
+  "slides": [
+    { "slide_number": 1, "text": "string" },
+    { "slide_number": 2, "text": "string" },
+    { "slide_number": 3, "text": "string" },
+    { "slide_number": 4, "text": "string" },
+    { "slide_number": 5, "text": "string" }
+  ]
+}`,
+    }],
+  })
+
+  const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const text = stripFences(raw)
+  let parsed: { slides: Carousel['slides'] }
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
+
+  const stripDashes = (s: string) => s
+    .replace(/—|–|--+/g, ',')
+    .replace(/ - /g, ', ')
+    .replace(/  +/g, ' ')
+
+  return {
+    slides: parsed.slides.slice(0, 5).map(s => ({
+      slide_number: s.slide_number,
+      text: stripDashes(s.text),
+    })),
+  }
+}
+
+export async function generateVideoScript(params: {
+  keyword: string
+  brandName: string
+  brandSlug?: string
+  articleTitle?: string
+  articleContent: string
+}): Promise<Omit<VideoScript, 'id' | 'keyword_id' | 'generated_at'>> {
+  const msg = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 1200,
+    system:     systemPrompt(params.brandName, params.brandSlug),
+    messages:   [{
+      role:    'user',
+      content: `Write a 45-second talking-head video script from this article. This is for a recruiter or brand spokesperson speaking directly to camera on LinkedIn or Instagram.
+
+Keyword/Topic: "${params.keyword}"
+Brand: "${params.brandName}"
+Article title: "${params.articleTitle ?? params.keyword}"
+
+Full article:
+${params.articleContent.slice(0, 4000)}
+
+Requirements:
+- Total spoken length: approximately 45 seconds (roughly 110-120 words at a natural speaking pace)
+- The HOOK must be the first 7 seconds (approximately 15-20 words) — it must stop the scroll immediately. Make it a bold statement, a surprising fact, or a direct question. Do NOT start with "Hi" or the brand name.
+- After the hook: deliver 2-3 punchy insights from the article
+- End with a clear call to action: tell viewers to read the full article (link in bio / link in comments)
+- Write in spoken English — contractions, short sentences, natural rhythm
+- No dashes of any kind, no emojis, no bullet points in the script text
+- The script should sound like a real person talking, not a press release
+
+Return ONLY this JSON:
+{
+  "hook_line": "string (the first 7 seconds — 15-20 words)",
+  "script": "string (full 45-second script including the hook, use \\n for paragraph breaks between sections)"
+}`,
+    }],
+  })
+
+  const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
+  const text = stripFences(raw)
+  let parsed: { hook_line: string; script: string }
+  try {
+    parsed = JSON.parse(text)
+  } catch {
+    throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
+  }
+
+  const stripDashes = (s: string) => s
+    .replace(/—|–|--+/g, ',')
+    .replace(/ - /g, ', ')
+    .replace(/  +/g, ' ')
+
+  return {
+    hook_line: stripDashes(parsed.hook_line),
+    script:    stripDashes(parsed.script),
   }
 }
 

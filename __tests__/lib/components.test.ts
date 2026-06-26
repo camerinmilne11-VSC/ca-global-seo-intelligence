@@ -63,7 +63,7 @@ describe('BrandSwitcher logic', () => {
     expect(slugs).toContain('ca-global')
     expect(slugs).toContain('ca-mining')
     expect(slugs).toContain('ca-finance')
-    expect(slugs).toHaveLength(3)
+    expect(slugs).toHaveLength(5)
   })
 
   it('exposes correct brand labels', () => {

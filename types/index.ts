@@ -1,3 +1,5 @@
+export type ContentSource = 'semrush' | 'manual'
+
 export type Brand = {
   id: string
   name: string
@@ -30,9 +32,27 @@ export type Keyword = {
   opportunity_rationale: string
   priority_score: number
   content_status: ContentStatus
+  source: ContentSource
   publication_url: string | null
   last_synced: string
   created_at: string
+}
+
+export type CarouselSlide = { slide_number: number; text: string }
+
+export type Carousel = {
+  id: string
+  keyword_id: string
+  slides: CarouselSlide[]
+  generated_at: string
+}
+
+export type VideoScript = {
+  id: string
+  keyword_id: string
+  hook_line: string
+  script: string
+  generated_at: string
 }
 
 export type KeywordWithRelations = Keyword & {
@@ -41,6 +61,8 @@ export type KeywordWithRelations = Keyword & {
   brief?: Brief | null
   draft?: Draft | null
   social?: Social | null
+  carousel?: Carousel | null
+  video_script?: VideoScript | null
 }
 
 export type FaqItem = { question: string; answer: string }

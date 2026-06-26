@@ -59,29 +59,9 @@ describe('generateDraft', () => {
       content: [{
         type: 'text',
         text: JSON.stringify({
-          proposed_title: 'Top Executive Recruitment Firms in Africa',
           seo_title: 'Executive Recruitment Africa | CA Global',
-          meta_description: 'Find the best executive recruitment services in Africa with CA Global, specialists in senior talent across mining, finance, and energy sectors.',
-          h1: 'Executive Recruitment in Africa: Finding Senior Talent',
-          h2_structure: [
-            'Why Executive Recruitment in Africa Is Different',
-            'Industries We Specialise In',
-            'Our Executive Search Process',
-          ],
-          intro_suggestion: "Africa's executive talent market is unique. Here's how CA Global helps you navigate it.",
-          key_points: [
-            'Africa has distinct talent pools by sector and region',
-            'CA Global operates across 54 countries',
-            'Our process combines headhunting with network-based search',
-          ],
-          faq_section: [
-            {
-              question: 'How long does executive recruitment take?',
-              answer: 'Typically 6–12 weeks for senior roles, depending on market availability and role complexity.',
-            },
-          ],
-          internal_links: ['Mining Recruitment → /mining-recruitment'],
-          cta: 'Submit a vacancy or speak to a consultant today.',
+          meta_description: 'Find the best executive recruitment services in Africa with CA Global.',
+          content: '# Executive Recruitment in Africa\n\nAfrica has distinct talent pools.\n\n## Why It Matters\n\nCA Global operates across 54 countries.',
         }),
       }],
     })
@@ -95,10 +75,8 @@ describe('generateDraft', () => {
       brandName: 'CA Global',
     })
 
-    expect(result.proposed_title).toBe('Top Executive Recruitment Firms in Africa')
     expect(result.seo_title).toBe('Executive Recruitment Africa | CA Global')
-    expect(result.h2_structure).toHaveLength(3)
-    expect(result.faq_section[0].question).toBe('How long does executive recruitment take?')
-    expect(result.cta).toBeTruthy()
+    expect(result.meta_description).toContain('CA Global')
+    expect(result.content).toContain('# Executive Recruitment in Africa')
   })
 })

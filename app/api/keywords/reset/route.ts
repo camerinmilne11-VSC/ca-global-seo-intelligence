@@ -14,6 +14,8 @@ export async function DELETE(req: Request) {
   await db.from('briefs').delete().eq('keyword_id', body.keywordId)
   await db.from('drafts').delete().eq('keyword_id', body.keywordId)
   await db.from('socials').delete().eq('keyword_id', body.keywordId)
+  await db.from('carousels').delete().eq('keyword_id', body.keywordId)
+  await db.from('video_scripts').delete().eq('keyword_id', body.keywordId)
 
   return NextResponse.json({ ok: true })
 }
