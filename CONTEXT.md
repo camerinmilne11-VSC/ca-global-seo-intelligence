@@ -1,12 +1,12 @@
 # Project Context — SEO Intelligence Dashboard
 
-Last updated: 2026-06-24
+Last updated: 2026-06-26
 
 ---
 
 ## What this is
 
-An internal SEO content management dashboard for CA Global, CA Mining, CA Finance, Vogue Hygiene, and CA Global HR. It gives the content team a prioritised keyword queue, AI-generated content briefs, full article drafts, and Instagram/LinkedIn social posts — all from one URL.
+An internal SEO content management dashboard for CA Global, CA Mining, CA Finance, Vogue Hygiene, and CA Global HR. It gives the content team a prioritised keyword queue, AI-generated content briefs, full article drafts, Instagram/LinkedIn social posts, carousel slide text for graphic designers, and talking-head video scripts — all from one URL.
 
 Built by Neil and Claude, June 2026.
 
@@ -59,26 +59,62 @@ Built by Neil and Claude, June 2026.
 | Table | Purpose |
 |---|---|
 | brands | All five brands |
-| keywords | ~230 keywords total across all brands (seeded + SEMrush synced) |
+| keywords | ~230 keywords + manually added topics. `source` column: 'semrush' or 'manual' |
 | clusters | Topic pillars each keyword belongs to |
-| briefs | AI-generated content briefs (one per keyword) |
-| drafts | AI-generated full articles (one per keyword) |
-| socials | AI-generated social captions (one per keyword) |
+| briefs | AI-generated content briefs (one per keyword/topic) |
+| drafts | AI-generated full articles (one per keyword/topic) |
+| socials | AI-generated social captions (one per keyword/topic) |
+| carousels | AI-generated carousel slide text, max 5 slides (one per keyword/topic) |
+| video_scripts | AI-generated 45-second talking-head scripts with isolated hook line (one per keyword/topic) |
 | competitors | Competitor domains for gap analysis per brand |
+
+All content tables (briefs, drafts, socials, carousels, video_scripts) cascade-delete when a keyword is deleted and have a UNIQUE constraint on keyword_id (one row per keyword).
 
 Approximate keyword counts: CA Global ~44, CA Mining ~35, CA Finance ~31, Vogue Hygiene ~71, CA Global HR ~49.
 
 ---
 
+## Navigation structure
+
+A `BrandSwitcher` (top nav) lets users switch between the 5 brands. A `BrandNav` (secondary nav, below the brand switcher) provides per-brand page links:
+
+**All brands:** Keywords · Topics · Briefs · Drafts · Socials
+
+**Recruitment brands only (not Vogue Hygiene):** + Carousels · Scripts
+
+---
+
 ## What the dashboard does
 
-1. **Keywords page** — Table of all keywords per brand, scored 0-100 by priority. Columns: keyword, score, volume, KD, intent, status.
-2. **Status dropdown** — Each keyword can be set to Opportunity, In Progress, Published, or Paused directly from the table.
-3. **+ Brief** — Generates a structured SEO content brief using the knowledge base files. Takes ~45 seconds.
-4. **+ Draft** — Generates a full 900-1200 word publication-ready article. Takes ~60 seconds.
-5. **+ Social** — Generates an Instagram/LinkedIn caption that summarises the article and ends with "Read the full article here: [INSERT LINK]". Takes ~30 seconds.
-6. **Reset** — Clears the brief, draft, and social for a keyword so it can be regenerated.
-7. **Sync button** — Hits the SEMrush API live to pull fresh keyword data for that brand.
+### Keywords page
+Table of SEMrush-sourced keywords per brand, scored 0-100 by priority. Columns: keyword, score, volume, KD, intent, status.
+
+Each row has action buttons that unlock in sequence:
+
+| Button | Requires | Output | Time |
+|---|---|---|---|
+| + Brief | Nothing | Structured SEO content brief | ~45s |
+| + Draft | Nothing (uses brief if exists) | Full 900-1200 word article | ~60s |
+| + Social | Nothing (uses draft if exists) | Instagram/LinkedIn caption | ~30s |
+| + Carousel | Draft must exist | 5 slides of text for graphic designer | ~20s |
+| + Script | Draft must exist | 45-second talking-head video script | ~20s |
+| Reset | Any content exists | Clears all generated content for that keyword | instant |
+
+**Carousel and Script buttons are hidden for Vogue Hygiene.**
+
+Each button regenerates (shown as `↻ Brief` etc.) if content already exists. View links appear inline after generation.
+
+### Topics page
+Manually-added ideas that didn't come from keyword research. Click `+ Add Topic`, type any title or question, and it gets added to the DB. Topics go through the exact same content generation chain as keywords (Brief → Draft → Social → Carousel → Script).
+
+### Briefs / Drafts / Socials / Carousels / Scripts pages
+List views of all generated content for the active brand, newest first.
+
+### Status dropdown
+Each keyword/topic can be set to: Opportunity · In Progress · Published · Paused
+
+### Sync button (Keywords page only)
+Hits the SEMrush API live to pull fresh keyword data for that brand.
 
 ---
 
@@ -102,11 +138,13 @@ Brand-specific industry files are auto-selected in `lib/claude.ts` via `loadKnow
 
 ## Content guardrails (enforced in code)
 
-- No em dashes, en dashes, or double dashes in drafts or social posts — replaced with commas
-- No emojis in social captions
+- No em dashes, en dashes, or double dashes in any generated content — replaced with commas
+- No emojis in social captions or carousel/script text
 - Social posts always end with: Read the full article here: [INSERT LINK]
+- Carousel slide 5 always ends with: Read the full article — link in bio
+- Video scripts always end with a CTA directing viewers to the link in bio/comments
 
-Applied in `lib/claude.ts` as both prompt instructions and post-processing strips.
+Applied in `lib/claude.ts` as both prompt instructions and post-processing `stripDashes()` strips.
 
 ---
 
@@ -118,6 +156,14 @@ Competitor domains for gap analysis — set in `app/api/semrush/gaps/route.ts`:
 - Vogue Hygiene: bidvestservices.co.za, servest.co.za, compass-group.co.za
 - CA Global HR: deel.com, remote.com, papayaglobal.com
 - CA Global / CA Mining / CA Finance: existing recruitment competitors
+
+---
+
+## Security
+
+All API routes that write to the DB or call Claude check `supabase.auth.getUser()` and return 401 if unauthenticated. The middleware protects all non-API page routes.
+
+**Known gap:** The original AI routes (`/api/ai/brief`, `/api/ai/draft`, `/api/ai/social`) and SEMrush routes (`/api/semrush/sync`, `/api/semrush/gaps`) do not have explicit auth checks — they predate this pattern. Low risk given no public traffic, but worth adding if the app ever becomes more widely accessible.
 
 ---
 
@@ -137,9 +183,9 @@ Competitor domains for gap analysis — set in `app/api/semrush/gaps/route.ts`:
 | Person | Role | Uses |
 |---|---|---|
 | Neil | Admin | Everything |
-| Alexandra | Content creator | Keywords, briefs, drafts — primary user |
-| Frazie | Social media | Social posts |
-| Irene | Design | Reference only |
+| Alexandra | Content creator | Keywords, Topics, Briefs, Drafts — primary user |
+| Frazie | Social media | Socials, Carousels |
+| Irene | Design | Carousels (slide text for graphic design) |
 
 Add new users: Supabase dashboard → Authentication → Users → Add user.
 
@@ -160,15 +206,16 @@ Note: Vercel encrypts sensitive vars — `vercel env pull` returns empty strings
 ## What still needs doing
 
 ### Do soon
-- [ ] Review and refine the **knowledge base files** — especially `vogue-hygiene-industry.md` and `ca-global-hr-industry.md` once content is being generated and you can see if the tone/context is right
 - [ ] Test content generation for Vogue Hygiene and CA Global HR — generate a brief and draft for one keyword each to confirm brand-specific knowledge base is injecting correctly (no recruitment language in Vogue output, EOR/PEO context present in CA Global HR output)
-- [ ] Establish a publishing cadence with Alexandra (suggest 2 articles per week per brand as a starting target)
+- [ ] Test carousel and script generation end-to-end — generate a draft for a CA Global keyword then hit + Carousel and + Script to verify output quality
+- [ ] Review and refine the **knowledge base files** once real content is being generated — especially `vogue-hygiene-industry.md` and `ca-global-hr-industry.md`
+- [ ] Establish a publishing cadence with Alexandra (suggest 2 articles per week per brand)
 
 ### Medium term
+- [ ] Add auth checks to the legacy API routes (`/api/ai/brief`, `/api/ai/draft`, `/api/ai/social`, `/api/semrush/*`) to match the pattern used in the new routes
 - [ ] As articles go live, paste their URLs into the keyword rows so internal links become trackable
-- [ ] Expose the competitor gap analysis in the UI — the API route `/api/semrush/gaps` is built but not surfaced
+- [ ] Expose the competitor gap analysis in the UI — `/api/semrush/gaps` is built but not surfaced
 - [ ] Expand CA Mining and CA Finance keyword coverage (fewer keywords than other brands)
-- [ ] Consider adding a navigation link to the Socials page in the sidebar
 
 ### Longer term
 - [ ] WordPress integration — auto-post drafts as a WordPress draft via the REST API
@@ -184,4 +231,4 @@ Note: Vercel encrypts sensitive vars — `vercel env pull` returns empty strings
 3. `git add -A && git commit -m "your message" && git push origin main`
 4. Vercel auto-deploys from main — live in ~35 seconds
 
-For Supabase schema changes: Supabase dashboard → SQL Editor → paste and run SQL directly.
+For Supabase schema changes: Supabase dashboard → SQL Editor → paste and run SQL directly. Never use supabase CLI migration commands locally — Vercel encrypts env vars so the connection will fail.
