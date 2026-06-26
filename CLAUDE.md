@@ -92,13 +92,38 @@ Auth is enforced in `middleware.ts` — all routes except `/login` and `/api/*` 
 
 ---
 
+## Components
+
+`components/` has two layers:
+- **Feature components** (`BrandNav.tsx`, `BrandSwitcher.tsx`, `KeywordRow.tsx`, `KeywordTable.tsx`, `TopicsTable.tsx`, `*Viewer.tsx`, etc.) — client components consumed by page.tsx files
+- **`components/ui/`** — shadcn primitives (don't modify directly)
+
+`lib/component-utils.ts` — pure logic helpers extracted from UI components so they can be unit-tested without jsdom. Add display/filter/sort logic here, not inline in components.
+
+---
+
+## Types
+
+All shared types are in `types/index.ts`. Two gotchas:
+- `Draft` has legacy fields (`proposed_title`, `h1`, `h2_structure`, etc.) kept only for DB compatibility — ignore these in new code, use `seo_title`, `meta_description`, `content`
+- `VideoScript` has two fields: `hook_line` (standalone opening line) and `script` (full body) — they're rendered separately in `ScriptViewer.tsx`
+
+---
+
 ## Key conventions
 
 - **SEMrush intent codes**: SEMrush returns `0,2,3` not `I/N/C/T`. `mapIntent()` in `lib/semrush.ts` converts before DB insert. The DB has a `keywords_search_intent_check` constraint — always go through `mapIntent()`.
-- **Dash stripping**: Claude often produces em/en dashes. `stripDashes()` in `lib/claude.ts` post-processes all three AI outputs. The prompt also instructs Claude not to use dashes.
+- **Dash stripping**: Claude often produces em/en dashes. `stripDashes()` in `lib/claude.ts` post-processes all AI outputs. The prompt also instructs Claude not to use dashes.
 - **JSON fence stripping**: `stripFences()` in `lib/claude.ts` removes markdown code fences from Claude's JSON responses.
 - **AI route timeouts**: set to 60s in `vercel.json` for `app/api/semrush/**` and `app/api/ai/**`.
 - **Knowledge base injection**: every Claude call injects all `knowledge-base/*.md` files. Brand-specific industry files (`vogue-hygiene-industry.md`, `ca-global-hr-industry.md`) override `industry.md` when the brand slug matches.
+- **Content guardrails** (enforced in prompts + post-processing): no em/en dashes anywhere; no emojis except `🔗` on the social caption link line; social captions use `🔗 [INSERT LINK]` (not "Read the full article here:"); carousel slide 5 always ends with `Read the full article — link in bio`; video scripts always end with a CTA to the link in bio/comments.
+
+---
+
+## Security
+
+Auth is checked in all new routes via `supabase.auth.getUser()`. **Known gap**: the original AI routes (`/api/ai/brief`, `/api/ai/draft`, `/api/ai/social`) and SEMrush routes (`/api/semrush/sync`, `/api/semrush/gaps`) predate this pattern and have no explicit auth check — low risk given no public traffic, but add auth before exposing externally.
 
 ---
 
@@ -113,8 +138,6 @@ Auth is enforced in `middleware.ts` — all routes except `/login` and `/api/*` 
 `competitors` — competitor domains per brand, used by `/api/semrush/gaps`
 
 Migrations are in `supabase/migrations/`. Run new migrations via Supabase SQL Editor, not CLI (env var encryption issue above).
-
-**To apply migration 003** (carousel/script/manual topics support): paste `supabase/migrations/003_add_carousel_script_manual.sql` into the Supabase SQL Editor and run.
 
 ---
 

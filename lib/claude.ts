@@ -317,25 +317,44 @@ export async function generateSocial(params: {
     system:     systemPrompt(params.brandName, params.brandSlug),
     messages:   [{
       role:    'user',
-      content: `Write an Instagram and LinkedIn social media post that promotes this blog article.
+      content: `Write an Instagram and LinkedIn social media post promoting this article. Match this style exactly.
 
 Keyword/Topic: "${params.keyword}"
 Brand: "${params.brandName}"${articleCtx}
 
-The goal is to summarise the key insight from the article and entice followers to click through to read the full post.
+STYLE EXAMPLES (follow this format closely):
 
-Requirements:
-- Hook in the first line (punchy, 5–10 words, no hashtags on line 1)
-- 2–3 short paragraphs summarising the most valuable point(s) from the article — enough to add value but leave them wanting more
-- Professional but conversational tone — sounds like a real person, not a corporate account
-- No emojis anywhere in the caption
-- No dashes of any kind (no hyphens, no em dashes, no en dashes) — use commas or full stops instead
-- End with exactly this call-to-action on its own line: "Read the full article here: [INSERT LINK]"
-- 8–12 relevant hashtags on a separate line at the very end
+Example A:
+image_text: This is the rarest skill in Islamic finance right now
+caption: Islamic finance is expanding rapidly across the GCC but the real constraint is talent.\n\nProfessionals who combine Sharia expertise with modern financial capability are extremely scarce globally.\n\nFrom sukuk structuring to Islamic treasury and compliance roles, demand is now outpacing supply at every level.\n\n🔗 [INSERT LINK]
+hashtags: ["#IslamicFinance","#ShariaCompliance","#GCCBanking","#ExecutiveSearch","#MiddleEastRecruitment"]
+
+Example B:
+image_text: How to Successfully Adapt to a New Executive Role
+caption: Just landed a new executive role? Success starts with building trust.\n\nA C-level promotion looks like success on paper until you realise the real challenge starts after day one.\n\nThe first 90 days of a new executive role quietly define everything and most people get it wrong by trying to prove themselves too fast. Here's what actually matters when stepping into a new leadership environment.\n\n🔗 [INSERT LINK]\n\nThoughts?
+hashtags: ["#ExecutiveSearch","#CLevel","#LeadershipDevelopment"]
+
+Example C:
+image_text: How to Hire and Relocate Skilled Talent to Australia
+caption: How Australia is solving its mining skills shortage through global hiring.\n\nAustralia's mining and renewables sectors are facing a persistent skills shortage. Engineers, tradespeople and technical specialists are in short supply and international hiring is becoming a core workforce strategy.\n\nBut bringing skilled talent into the country involves a structured visa and relocation process that many employers still underestimate.\n\n🔗 [INSERT LINK]
+hashtags: ["#CAMining","#SkillsMigration","#MiningJobs","#AustraliaJobs","#VisaSponsorship"]
+
+REQUIREMENTS:
+- image_text: Short phrase for the image overlay graphic. Either the article title or the single sharpest takeaway. Max 12 words.
+- caption structure:
+  1. Hook — punchy opening line or question (8-12 words). Can stand alone or lead into the body.
+  2. 2-3 short paragraphs (2-4 sentences each). Punchy, direct, adds real value.
+  3. On its own line: "🔗 [INSERT LINK]"
+  4. Optional — include "Thoughts?" on its own line ONLY for opinion or discussion pieces. Omit for factual/how-to content.
+- hashtags: 3-8 tightly targeted tags. No more.
+- No emojis except 🔗 on the link line
+- No dashes of any kind — use commas or full stops instead
+- Do NOT write "Read the full article here:" — use 🔗 [INSERT LINK] only
 
 Return ONLY this JSON:
 {
-  "caption": "string (full post text, use \\n for line breaks, CTA and hashtags each on their own lines at end)",
+  "image_text": "string",
+  "caption": "string (use \\n for line breaks)",
   "hashtags": ["string"]
 }`,
     }],
@@ -343,23 +362,31 @@ Return ONLY this JSON:
 
   const raw  = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
   const text = stripFences(raw)
-  let parsed: { caption: string; hashtags: string[] }
+  let parsed: { image_text: string; caption: string; hashtags: string[] }
   try {
     parsed = JSON.parse(text)
   } catch {
     throw new Error('Claude returned malformed JSON: ' + text.slice(0, 200))
   }
 
-  // Enforce no emojis and no dashes regardless of what Claude produces
-  const cleanCaption = parsed.caption
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-    .replace(/[\u{2600}-\u{27BF}]/gu, '')
-    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+  const stripDashes = (s: string) => s
     .replace(/—|–|--+/g, ',')
     .replace(/ - /g, ', ')
+    .replace(/  +/g, ' ')
+
+  // Strip emojis from caption body but preserve 🔗 (U+1F517) used on link line.
+  // 🔗 is excluded by splitting the 1F000-1FFFF range around U+1F517.
+  const cleanCaption = parsed.caption
+    .replace(/[\u{1F000}-\u{1F516}\u{1F518}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
     .replace(/^- /gm, '')
     .replace(/  +/g, ' ')
     .trim()
 
-  return { caption: cleanCaption, hashtags: parsed.hashtags }
+  return {
+    image_text: parsed.image_text ? stripDashes(parsed.image_text) : null,
+    caption:    stripDashes(cleanCaption),
+    hashtags:   parsed.hashtags,
+  }
 }

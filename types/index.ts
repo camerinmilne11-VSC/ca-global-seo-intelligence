@@ -111,6 +111,7 @@ export type Draft = {
 export type Social = {
   id: string
   keyword_id: string
+  image_text: string | null
   caption: string
   hashtags: string[]
   generated_at: string
