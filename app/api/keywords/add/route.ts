@@ -1,9 +1,14 @@
 export const runtime = 'nodejs'
 
 import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase-service'
 
 export async function POST(req: Request) {
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json().catch(() => ({}))
   const { topic, brandSlug, intent } = body
 

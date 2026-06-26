@@ -3,9 +3,14 @@ export const maxDuration = 60
 
 import { NextResponse } from 'next/server'
 import { generateVideoScript } from '@/lib/claude'
+import { createClient } from '@/lib/supabase-server'
 import { createServiceClient } from '@/lib/supabase-service'
 
 export async function POST(req: Request) {
+  const authClient = await createClient()
+  const { data: { user } } = await authClient.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const body = await req.json().catch(() => ({}))
   if (!body?.keywordId) {
     return NextResponse.json({ error: 'keywordId required' }, { status: 400 })
